@@ -31,7 +31,7 @@ python server/server.py
 
 ### Projekt klonen
 ```bash
-git clone https://github.com/DEIN-USERNAME/robot-cartography-sim.git
+git clone https://github.com/DEIN-USERNAME/mas-robot-cartography.git
 cd robot-cartography-sim
 ```
 
