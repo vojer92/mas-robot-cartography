@@ -7,8 +7,10 @@ Ein Multiagentensystem zur Kartographierung eines unbekannten Gebiets mit autono
 ## 🚀 Projekt starten
 
 ### Voraussetzungen
+
 - **Python 3.13** oder höher
 - Virtuelle Umgebung empfohlen:
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Linux/macOS
@@ -16,11 +18,13 @@ source .venv/bin/activate  # Linux/macOS
 ```
 
 ### Installation
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### Server starten
+
 ```bash
 python server/server.py
 ```
@@ -29,19 +33,15 @@ python server/server.py
 
 ## 💡 Git & GitHub Basics
 
-### 🔁 Git initialisieren (nur einmalig beim Erstellen)
-```bash
-git init
-git remote add origin https://github.com/DEIN-USERNAME/mas-robot-cartography.git
-```
-
 ### 📥 Projekt klonen (wenn ihr beitretet)
+
 ```bash
 git clone https://github.com/DEIN-USERNAME/mas-robot-cartography.git
 cd mas-robot-cartography
 ```
 
 ### 🔀 Neues Feature entwickeln
+
 ```bash
 git checkout -b feature/kartographie-agent
 # Änderungen machen ...
@@ -52,6 +52,7 @@ git push --set-upstream origin feature/kartographie-agent
 ```
 
 ### 📤 Änderungen an bestehendem Branch pushen
+
 ```bash
 git add .
 git commit -m "fix(agent): Hindernislogik korrigiert"
@@ -59,16 +60,19 @@ git push
 ```
 
 ### 📥 Änderungen vom Team holen
+
 ```bash
 git pull origin main
 ```
 
 ### 🔄 Branch in `main` mergen (über GitHub)
+
 1. Auf GitHub: Pull Request (PR) öffnen
 2. Reviewer zuweisen & kommentieren
 3. PR wird nach Freigabe gemerged
 
 ### 🧹 Branch lokal löschen (nach Merge)
+
 ```bash
 git branch -d feature/kartographie-agent
 ```
@@ -78,6 +82,7 @@ git branch -d feature/kartographie-agent
 ## 🧑‍💻 Code Guideline
 
 ### ✅ Docstrings (PEP 257)
+
 ```python
 def explore_area(agent: ExplorerAgent, radius: int) -> list[tuple[int, int]]:
     """
@@ -94,12 +99,14 @@ def explore_area(agent: ExplorerAgent, radius: int) -> list[tuple[int, int]]:
 ```
 
 ### ✅ Typannotationen (PEP 484)
+
 ```python
 def add(a: float, b: float) -> float:
     return a + b
 ```
 
 ### ✅ Weitere Konventionen
+
 - Snake_case für Variablen und Funktionen
 - PascalCase für Klassen
 - 4 Leerzeichen Einrückung
@@ -110,6 +117,7 @@ def add(a: float, b: float) -> float:
 ## 🧪 Tests
 
 Einfaches Testen mit `pytest`:
+
 ```bash
 pytest
 ```
