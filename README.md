@@ -7,8 +7,10 @@ Ein Multiagentensystem zur Kartographierung eines unbekannten Gebiets mit autono
 ## 🚀 Projekt starten
 
 ### Voraussetzungen
+
 - Python 3.11 oder höher
 - Virtuelle Umgebung empfohlen:
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Linux/macOS
@@ -16,11 +18,13 @@ source .venv/bin/activate  # Linux/macOS
 ```
 
 ### Installation
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### Server starten
+
 ```bash
 python server/server.py
 ```
@@ -30,12 +34,14 @@ python server/server.py
 ## 💡 GitHub Basics
 
 ### Projekt klonen
+
 ```bash
 git clone https://github.com/DEIN-USERNAME/mas-robot-cartography.git
-cd robot-cartography-sim
+cd mas-robot-cartography
 ```
 
 ### Neues Feature entwickeln
+
 ```bash
 git checkout -b feature/kartographie-agent
 # Änderungen machen, dann:
@@ -45,11 +51,13 @@ git push origin feature/kartographie-agent
 ```
 
 ### Änderungen vom Team holen
+
 ```bash
 git pull origin main
 ```
 
 ### Änderungen zusammenführen (via GitHub GUI)
+
 1. Auf GitHub unter "Pull Requests" neuen PR öffnen
 2. Reviewer zuweisen
 3. Nach Freigabe: `Merge` in `main` klicken
@@ -59,6 +67,7 @@ git pull origin main
 ## 🧑‍💻 Code Guideline
 
 ### ✅ Docstrings (PEP 257 konform)
+
 Verwendet **dreifache Anführungszeichen** (`"""`) für Funktionen, Methoden und Klassen. Beispiel:
 
 ```python
@@ -77,6 +86,7 @@ def explore_area(agent: ExplorerAgent, radius: int) -> list[tuple[int, int]]:
 ```
 
 ### ✅ Typannotationen (PEP 484)
+
 Alle Funktionen und Variablen sollten mit Typen versehen werden.
 
 ```python
@@ -88,6 +98,7 @@ def add(a: float, b: float) -> float:
 ```
 
 ### ✅ Weitere Konventionen
+
 - Snake_case für Variablen und Funktionen
 - PascalCase für Klassen
 - 4 Leerzeichen als Einrückung
@@ -98,6 +109,7 @@ def add(a: float, b: float) -> float:
 ## 🧪 Tests
 
 Schreibt einfache Unit-Tests mit `pytest`:
+
 ```bash
 pytest
 ```
