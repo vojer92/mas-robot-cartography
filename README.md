@@ -1,4 +1,4 @@
-# 🛰️ Robot Cartography Simulation
+# 🛰️ mas-robot-cartography
 
 Ein Multiagentensystem zur Kartographierung eines unbekannten Gebiets mit autonomen Robotern. Die Simulation basiert auf der [Mesa](https://mesa.readthedocs.io/en/stable/) Agenten-Framework und ist Teil eines Informatikprojekts zur Erforschung verteilter Intelligenz.
 
@@ -7,10 +7,8 @@ Ein Multiagentensystem zur Kartographierung eines unbekannten Gebiets mit autono
 ## 🚀 Projekt starten
 
 ### Voraussetzungen
-
-- Python 3.11 oder höher
+- **Python 3.13** oder höher
 - Virtuelle Umgebung empfohlen:
-
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Linux/macOS
@@ -18,58 +16,68 @@ source .venv/bin/activate  # Linux/macOS
 ```
 
 ### Installation
-
 ```bash
 pip install -r requirements.txt
 ```
 
 ### Server starten
-
 ```bash
 python server/server.py
 ```
 
 ---
 
-## 💡 GitHub Basics
+## 💡 Git & GitHub Basics
 
-### Projekt klonen
+### 🔁 Git initialisieren (nur einmalig beim Erstellen)
+```bash
+git init
+git remote add origin https://github.com/DEIN-USERNAME/mas-robot-cartography.git
+```
 
+### 📥 Projekt klonen (wenn ihr beitretet)
 ```bash
 git clone https://github.com/DEIN-USERNAME/mas-robot-cartography.git
 cd mas-robot-cartography
 ```
 
-### Neues Feature entwickeln
-
+### 🔀 Neues Feature entwickeln
 ```bash
 git checkout -b feature/kartographie-agent
-# Änderungen machen, dann:
+# Änderungen machen ...
+git status
 git add .
-git commit -m "feat(agent): kartographiert Umgebung durch Rasteranalyse"
-git push origin feature/kartographie-agent
+git commit -m "feat(agent): explorer agent erkennt Hindernisse"
+git push --set-upstream origin feature/kartographie-agent
 ```
 
-### Änderungen vom Team holen
+### 📤 Änderungen an bestehendem Branch pushen
+```bash
+git add .
+git commit -m "fix(agent): Hindernislogik korrigiert"
+git push
+```
 
+### 📥 Änderungen vom Team holen
 ```bash
 git pull origin main
 ```
 
-### Änderungen zusammenführen (via GitHub GUI)
+### 🔄 Branch in `main` mergen (über GitHub)
+1. Auf GitHub: Pull Request (PR) öffnen
+2. Reviewer zuweisen & kommentieren
+3. PR wird nach Freigabe gemerged
 
-1. Auf GitHub unter "Pull Requests" neuen PR öffnen
-2. Reviewer zuweisen
-3. Nach Freigabe: `Merge` in `main` klicken
+### 🧹 Branch lokal löschen (nach Merge)
+```bash
+git branch -d feature/kartographie-agent
+```
 
 ---
 
 ## 🧑‍💻 Code Guideline
 
-### ✅ Docstrings (PEP 257 konform)
-
-Verwendet **dreifache Anführungszeichen** (`"""`) für Funktionen, Methoden und Klassen. Beispiel:
-
+### ✅ Docstrings (PEP 257)
 ```python
 def explore_area(agent: ExplorerAgent, radius: int) -> list[tuple[int, int]]:
     """
@@ -86,30 +94,22 @@ def explore_area(agent: ExplorerAgent, radius: int) -> list[tuple[int, int]]:
 ```
 
 ### ✅ Typannotationen (PEP 484)
-
-Alle Funktionen und Variablen sollten mit Typen versehen werden.
-
 ```python
-x: int = 5
-name: str = "Robo"
-
 def add(a: float, b: float) -> float:
     return a + b
 ```
 
 ### ✅ Weitere Konventionen
-
 - Snake_case für Variablen und Funktionen
 - PascalCase für Klassen
-- 4 Leerzeichen als Einrückung
-- Nutzt f-Strings statt `%` oder `str.format`
+- 4 Leerzeichen Einrückung
+- `f-Strings` statt `%` oder `.format()`
 
 ---
 
 ## 🧪 Tests
 
-Schreibt einfache Unit-Tests mit `pytest`:
-
+Einfaches Testen mit `pytest`:
 ```bash
 pytest
 ```
@@ -119,7 +119,7 @@ pytest
 ## 📁 Projektstruktur
 
 ```
-robot-cartography-sim/
+mas-robot-cartography/
 ├── agents/                # Agentenklassen
 ├── model/                 # Mesa Model & Logik
 ├── server/                # Webserver & Darstellung
