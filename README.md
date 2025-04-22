@@ -1,6 +1,6 @@
 # 🛰️ mas-robot-cartography
 
-Ein Multiagentensystem zur Kartographierung eines unbekannten Gebiets mit autonomen Robotern. Die Simulation basiert auf der [Mesa](https://mesa.readthedocs.io/en/stable/) Agenten-Framework und ist Teil eines Informatikprojekts zur Erforschung verteilter Intelligenz.
+Ein Multiagentensystem zur Kartographierung eines unbekannten Gebiets mit autonomen Robotern. Die Simulation basiert auf der [Mesa](https://mesa.readthedocs.io/en/stable/) (TODO: Steht noch nicht fest!) Agenten-Framework und ist Teil eines Informatikprojekts zur Erforschung verteilter Intelligenz.
 
 ---
 
@@ -8,7 +8,7 @@ Ein Multiagentensystem zur Kartographierung eines unbekannten Gebiets mit autono
 
 ### Voraussetzungen
 
-- **Python 3.13** oder höher
+- **Python 3.11** oder höher
 - Virtuelle Umgebung empfohlen:
 
 ```bash
@@ -26,7 +26,7 @@ pip install -r requirements.txt
 ### Server starten
 
 ```bash
-python server/server.py
+python server/server.py # TODO: Wird sich je nach Struktur noch ändern!
 ```
 
 ---
@@ -36,7 +36,7 @@ python server/server.py
 ### 📥 Projekt klonen (wenn ihr beitretet)
 
 ```bash
-git clone https://github.com/DEIN-USERNAME/mas-robot-cartography.git
+git clone https://github.com/vojer92/mas-robot-cartography.git
 cd mas-robot-cartography
 ```
 
@@ -114,7 +114,7 @@ def add(a: float, b: float) -> float:
 
 ---
 
-## 🧪 Tests
+## 🧪 Tests (TODO: je nachdem, ob wir testing betreiben wollen)
 
 Einfaches Testen mit `pytest`:
 
@@ -137,6 +137,8 @@ mas-robot-cartography/
 ├── requirements.txt       # Abhängigkeiten
 ├── .gitignore             # Git-Ignore
 └── README.md              # Diese Datei
+
+# TODO: Über die Struktur wird noch entschieden. Wurde nur als Platzhalter angelegt.
 ```
 
 ---
