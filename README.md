@@ -134,6 +134,7 @@ mas-robot-cartography/
 ├── simulation/            # Szenarien & Parameter
 ├── tests/                 # Unit-Tests
 ├── docs/                  # Dokumentation
+├── examples/              # Beispiele Mesa
 ├── requirements.txt       # Abhängigkeiten
 ├── .gitignore             # Git-Ignore
 └── README.md              # Diese Datei
