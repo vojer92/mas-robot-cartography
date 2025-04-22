@@ -1,4 +1,5 @@
 mesa
+seaborn
 numpy
 pandas
 pytest
