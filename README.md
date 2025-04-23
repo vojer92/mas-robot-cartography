@@ -1,6 +1,6 @@
 # 🛰️ mas-robot-cartography
 
-Ein Multiagentensystem zur Kartographierung eines unbekannten Gebiets mit autonomen Robotern. Die Simulation basiert auf der [Mesa](https://mesa.readthedocs.io/en/stable/) (TODO: Steht noch nicht fest!) Agenten-Framework und ist Teil eines Informatikprojekts zur Erforschung verteilter Intelligenz.
+Ein Multiagentensystem zur Kartographierung eines unbekannten Gebiets mit autonomen Robotern. Die Simulation basiert auf der [Mesa](https://mesa.readthedocs.io/en/stable/) Agenten-Framework und ist Teil eines Informatikprojekts zur Erforschung verteilter Intelligenz.
 
 ---
 
@@ -8,7 +8,7 @@ Ein Multiagentensystem zur Kartographierung eines unbekannten Gebiets mit autono
 
 ### Voraussetzungen
 
-- **Python 3.11** oder höher
+- **Python 3.13** oder höher, da bessere Typannotationen möglich
 - Virtuelle Umgebung empfohlen:
 
 ```bash
@@ -109,6 +109,7 @@ def add(a: float, b: float) -> float:
 
 - Snake_case für Variablen und Funktionen
 - PascalCase für Klassen
+- Snake_case für Dateinamen
 - 4 Leerzeichen Einrückung
 - `f-Strings` statt `%` oder `.format()`
 
@@ -129,17 +130,14 @@ pytest
 ```
 mas-robot-cartography/
 ├── agents/                # Agentenklassen
-├── model/                 # Mesa Model & Logik
-├── server/                # Webserver & Darstellung
-├── simulation/            # Szenarien & Parameter
-├── tests/                 # Unit-Tests
+├── agent_factory.py       # Agent Factory
+├── exploration/           # Erkundungsstrategien
 ├── docs/                  # Dokumentation
 ├── examples/              # Beispiele Mesa
 ├── requirements.txt       # Abhängigkeiten
+├── main.txt               # Hauptseinstiegspunkt
 ├── .gitignore             # Git-Ignore
 └── README.md              # Diese Datei
-
-# TODO: Über die Struktur wird noch entschieden. Wurde nur als Platzhalter angelegt.
 ```
 
 ---
