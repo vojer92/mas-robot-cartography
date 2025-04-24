@@ -55,7 +55,7 @@ mas-robot-cartography/
 
 ### 1. **Schichtenmodell** (MVC-ähnlich)
 
-- **Modell**: Beinhaltet das Grid, Agenten, Scheduler, und Metriken (robot_model.py)
+- **Model**: Beinhaltet das Grid, Agenten, Scheduler, und Metriken (robot_model.py)
 - **Agenten**: Verhalten der Agenten ist modular aufgebaut, Factory-basiert
 - **Visualisierung**: Getrennt in `server.py` (GUI), mit interaktiven Parametern und Chart-Modulen
 
