@@ -3,4 +3,3 @@ seaborn
 numpy
 pandas
 pytest
-matplotlib
