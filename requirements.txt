@@ -3,5 +3,9 @@ seaborn
 numpy
 pandas
 pytest
+
 # Necessary for mesa visulization app
 solara
+solara-server
+networkx
+altair
