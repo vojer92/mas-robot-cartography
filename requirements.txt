@@ -1,11 +1,11 @@
-mesa
-seaborn
-numpy
-pandas
-pytest
+mesa==3.1.5
+seaborn==0.13.2
+numpy==2.2.5
+pandas==2.2.3
+pytest==8.3.5
 
 # Necessary for mesa visulization app
-solara
-solara-server
-networkx
-altair
+solara==1.46.0
+solara-server==1.46.0
+networkx==3.4.2
+altair==5.5.0
