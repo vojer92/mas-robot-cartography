@@ -3,7 +3,7 @@ import heapq
 
 class Cell:
     """
-    Represents a node in the A* search with position, cost from start, estimated cost to goal, and parent reference.
+    Represents a node in the A* search with position, cost from start, estimated cost to goal and parent reference.
     """
     def __init__(
             self,
@@ -32,6 +32,15 @@ def manhattan_distance(
     Calculate the Manhattan distance between two points.
     """
     return sum(abs(a - b) for a, b in zip(point_a, point_b))
+
+def euclidean_distance(
+        point_a: tuple[int, int],
+        point_b: tuple[int, int]
+) -> float:
+    """
+    Calculate the Euclidean distance between two points.
+    """
+    return sum((a - b) ** 2 for a, b in zip(point_a, point_b)) ** 0.5
 
 def get_neighbors(
         grid: np.ndarray,
@@ -105,8 +114,8 @@ def a_star_search(
         for neighbor_position in get_neighbors(grid, current_cell.position, diagonal_movement_allowed):
             if neighbor_position in closed_set:
                 continue
-            # If neighbor is not in cell_map / unknown or - create new node, add to open_list
-            # if the new path to this neighbor is cheaper than the  already known path - update the node, add to open_list again
+            # If neighbor is not in cell_map / unknown - create new node, add to open_list
+            # If the new path to this neighbor is cheaper than the  already known path - update the node, add to open_list again
             new_real_costs_from_start = current_cell.real_costs_from_start + costs_per_moved_cell
             if (neighbor_position not in cell_map or
                 new_real_costs_from_start < cell_map[neighbor_position].real_costs_from_start):
