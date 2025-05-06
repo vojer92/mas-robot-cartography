@@ -434,38 +434,34 @@ def agent_portrayal(agent: mesa.Agent) -> Dict[str, Any]:
         Dict[str, Any]: Ein Wörterbuch, das die visuellen Eigenschaften für den Agenten definiert.
     """
     if isinstance(agent, Robot):
-        color: str = COLOR_ROBOT_EXPLORE
-        # Unterscheide Rückkehr-Farbe nach Dringlichkeit (Batteriestand)
-        if agent.mode == MODE_RETURN:
-            color = COLOR_ROBOT_RETURN_LOW_BATT if agent.battery <= Robot.BATTERY_THRESHOLD else COLOR_ROBOT_RETURN_OK_BATT
-        elif agent.battery <= Robot.BATTERY_THRESHOLD:
-            # Noch im Explore-Modus, aber Batterie wird knapp (visuelle Warnung)
-            color = COLOR_ROBOT_RETURN_OK_BATT # Gleiche Farbe wie nicht-kritische Rückkehr
+        if agent.battery <= 0:
+            color = COLOR_ROBOT_RETURN_LOW_BATT  # Rot (keine Batterie)
+        elif agent.mode == MODE_RETURN:
+            color = COLOR_ROBOT_RETURN_OK_BATT  # Orange (fährt zurück, hat aber noch Batterie)
+        else:
+            # Muss im Erkundungsmodus sein und Batterie > 0
+            color = COLOR_ROBOT_EXPLORE  # Blau (erkundet)
 
         return {
             "color": color,
             "size": 50,
-            "layer": 2,  # Roboter auf oberster Ebene
-            "text": f"{agent.battery}%",
-            "text_color": "white" if color != COLOR_STATION else "black", # Textkontrast sicherstellen
+            "zorder": 2,  # Roboter auf oberster Ebene
         }
 
     if isinstance(agent, Obstacle):
         return {
             "color": COLOR_OBSTACLE,
             "size": 100,  # Füllt die Zelle fast aus
-            "shape": "rect",
-            "layer": 1,  # Unter Robotern
+            "marker": "s",
+            "zorder": 1,  # Unter Robotern
         }
 
     if isinstance(agent, ChargingStation):
         return {
             "color": COLOR_STATION,
             "size": 80,  # Etwas kleiner als Hindernis
-            "shape": "rect",
-            "layer": 1,  # Unter Robotern
-            "text": "⚡",  # Blitz-Symbol
-            "text_color": "black",
+            "marker": "s",
+            "zorder": 1,  # Unter Robotern
         }
     # Fallback für unerwartete Agententypen
     return {}
