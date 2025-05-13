@@ -3,7 +3,6 @@
 from mesa.space import MultiGrid
 import numpy as np
 
-
 class MultiGridWithProperties(MultiGrid):
     """
         Representation of the environment. Local knowledge of the environment and the environment itself.
@@ -11,7 +10,7 @@ class MultiGridWithProperties(MultiGrid):
     def __init__(self, width, height, torus):
         super().__init__(width, height, torus)
         self.properties = {
-            "unknown": np.full((width, height), True),
+            "unknown": np.full((width, height), True)
         }
 
     def add_property(self, name: str, default_value=None):
@@ -24,6 +23,17 @@ class MultiGridWithProperties(MultiGrid):
         if name not in self.properties:
             raise KeyError(f"Property '{name}' does not exist.")
         return self.properties[name][pos[0], pos[1]]
+
+#------------------------------------------------------------------------------------------
+# agent.py
+
+...
+    #Initialisierung
+    ...
+    self.local_environment_memory = MultiGridWithProperties(width, height, torus)
+    # Latest perception time for aging of the memory and knowing the newest scan
+    self.local_environment_memory.add_property("perception_time")
+    ...
 
 # ------------------------------------------------------------------------------------------
 # repository.py
@@ -46,6 +56,7 @@ class Perception(ABC):
     @abstractmethod
     def scan_environment(self,
         world: MultiGridWithProperties,
+        current_time: int,
         agent_pos: tuple[int, int],
         agent_orientation: int,
         max_range: int, #Evtl. auch nur als Attribut von RaycastingBresenham
@@ -69,6 +80,7 @@ class RaycastingBresenham(Perception):
 
     def scan_environment(self,
         world: MultiGridWithProperties,
+        current_time: int,
         agent_pos: tuple[int, int],
         agent_orientation: int, # 0 = east, 90/-270 = south, +/-180 = west, 270/-90 = north
         max_range: int, # perception range in fields
@@ -102,6 +114,8 @@ class RaycastingBresenham(Perception):
                     agent_local_memory.place_agent(copy.deepcopy(obj), pos) #deepcopy for strict separation
                 # Set cell als known
                 agent_local_memory.set_property(pos, "unknown", False)
+                # Set perception_time as now
+                agent_local_memory.set_property(pos, "perception_time", current_time)
                 # Break at objects (if activated)
                 if blocked_by_objects and not world.is_cell_empty(pos):
                     break
