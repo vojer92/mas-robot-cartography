@@ -5,7 +5,7 @@ import numpy as np
 
 class MultiGridWithProperties(MultiGrid):
     """
-        Class for local knowledge of the environment.
+        Representation of the environment. Local knowledge of the environment and the environment itself.
     """
     def __init__(self, width, height, torus):
         super().__init__(width, height, torus)
@@ -85,6 +85,7 @@ class EuclideanDistance(HeuristicStrategy):
 # ------------------------------------------------------------------------------------------
 # route_finding_algorithm.py
 from abc import ABC, abstractmethod
+from ??? import MulitGridWithProperties
 
 # Main interface for all route-finding-algorithms
 class RouteFindingAlgorithm(ABC):
@@ -96,7 +97,8 @@ class RouteFindingAlgorithm(ABC):
         local_grid: MultiGridWithProperties,
         start_pos: tuple[int, int],
         goal_pos: tuple[int, int],
-        moore: bool
+        moore: bool,
+        current_time: int = None
     ) -> 'list[tuple[int, int]] | None':
         pass
 
@@ -107,6 +109,7 @@ import heapq
 
 from algorithms.route_finding_algorithm import RouteFindingAlgorithm
 from algorithms.heuristics.heuristic_strategy import HeuristicStrategy
+from ??? import MulitGridWithProperties
 
 class AStar(RouteFindingAlgorithm):
     def __init__(self, heuristic: HeuristicStrategy):
@@ -116,7 +119,8 @@ class AStar(RouteFindingAlgorithm):
         grid: 'MultiGridWithProperties',
         start_pos: tuple[int, int],
         goal_pos: tuple[int, int],
-        moore: bool
+        moore: bool,
+        current_time: int = None  # Not used in astar-algorithm
     ) -> 'list[tuple[int, int]] | None':
         """
         Route search using A* algorithm.
