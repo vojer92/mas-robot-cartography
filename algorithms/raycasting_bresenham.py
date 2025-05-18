@@ -1,3 +1,9 @@
+# TODO: Change to mesa 3.2.0!
+#  MultiGridWithProperties -> DiscreteSpace + CellObjects + PropertyLayer
+
+# TODO:
+#  If some objects dont block view and some do is_cell_empty cannot be used anymore!
+
 # ------------------------------------------------------------------------------------------
 # ???
 from mesa.space import MultiGrid

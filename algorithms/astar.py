@@ -1,4 +1,12 @@
-#------------------------------------------------------------------------------------------
+# TODO: Change to mesa 3.2.0!
+#  MultiGridWithProperties -> DiscreteSpace + CellObjects + PropertyLayer
+
+# TODO:
+#  If charging stations (or other objects which dont block cells) are introduced
+#  is_cell_empty cannot be used anymore!
+
+
+# ------------------------------------------------------------------------------------------
 # ???
 from mesa.space import MultiGrid
 import numpy as np

@@ -1,3 +1,21 @@
+# TODO:
+#  Agenten-Typbezeichnungen abstimmen
+
+# TODO:
+#  Funktionen für Anziehung und Abstoßung als Parameter beim DynamicPotentialField.__init__
+
+# TODO:
+#  Schönere Methode (z.B. Ringförmig um aktuelle Position per iter_neighborhood(sight_range)) implementieren
+#  bei _get_current_perception_cells!
+#  Bis dahin einfach komplettes Grid durchgehen.
+
+# TODO: Change to mesa 3.2.0!
+#  MultiGridWithProperties -> DiscreteSpace + CellObjects + PropertyLayer
+
+# TODO:
+#  What happens if an agent is surrounded by repulsive objects?
+#  Is a absolute check (for example with is_cell_empty (! non repulsive objects)) necessary?
+
 #------------------------------------------------------------------------------------------
 # ???
 
@@ -129,8 +147,6 @@ class DynamicPotentialField(RouteFindingAlgorithm):
         """
         Calculate the potential field of the relevant cells.
         """
-        # TODO:
-        #  Funktionen für Anziehung und Abstoßung als Parameter beim __init__
         # Get all objects in relevant_cells
         object_positions = []
         for pos in relevant_cells:
@@ -163,9 +179,6 @@ class DynamicPotentialField(RouteFindingAlgorithm):
         """
         Get all cells, which were percept in the current time step.
         """
-        # TODO:
-        #  Schönere Methode (z.B. Ringförmig um aktuelle Position per iter_neighborhood(sight_range)) implementieren!
-        #  Bis dahin einfach komplettes Grid durchgehen.
         return[
             (x, y)
             for x in range(local_grid.width)
