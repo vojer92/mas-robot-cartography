@@ -3,7 +3,7 @@
 
 from algorithms.environment_perception.environment_perception_method import EnvironmentPerceptionMethod
 from typing import Generator
-from mesa.discrete_space import Grid, OrthogonalMooreGrid, OrthogonalMooreGrid, HexGrid, OrthogonalVonNeumannGrid
+from mesa.discrete_space import OrthogonalMooreGrid
 import math
 import copy
 
@@ -20,7 +20,7 @@ class RaycastingBresenham(EnvironmentPerceptionMethod):
         self.resolution = resolution
 
     def scan_environment(self,
-        world: Grid,
+        world: OrthogonalMooreGrid,
         current_time: int,
         agent_pos: tuple[int, int],
         agent_orientation: int, # 0 = east, 90/-270 = south, +/-180 = west, 270/-90 = north
@@ -36,30 +36,8 @@ class RaycastingBresenham(EnvironmentPerceptionMethod):
         """
         # Check grid (allowed types; world and agent_local_memory are same type and size)
         # Orthogonal Moore grid (8 neighbors)
-        if isinstance(world, OrthogonalMooreGrid) and isinstance(agent_local_map, OrthogonalMooreGrid):
-            if world.size == agent_local_map.size:
-                self.get_raycast_endpoint_method = "_get_orthogonal_raycast_endpoint"
-                self.line_draw_method = "_bresenham_line"
-            else:
-                raise TypeError(f"Sizes of world {world.size} and agent_local_map {agent_local_map.size} do not match")
-        # Orthogonal VonNeumann grid (4 neighbors)
-        elif isinstance(world, OrthogonalVonNeumannGrid) and isinstance(agent_local_map, OrthogonalVonNeumannGrid):
-            if world.size == agent_local_map.size:
-                self.get_raycast_endpoint_method = "_get_orthogonal_raycast_endpoint"
-                self.line_draw_method = "_bresenham_line"
-            else:
-                raise TypeError(f"Sizes of world {world.size} and agent_local_map {agent_local_map.size} do not match")
-        # Hex grid (6 neighbors, flat-topped)
-        elif isinstance(world, HexGrid) and isinstance(agent_local_map, HexGrid):
-            if world.size == agent_local_map.size:
-                self.get_raycast_endpoint_method = "_get_hexagonal_raycast_endpoint"
-                self.line_draw_method = "_hex_grid_line"
-            else:
-                raise TypeError(f"Sizes of world {world.size} and agent_local_map {agent_local_map.size} do not match")
-        # Not supported or not matching types
-        else:
-            raise TypeError(f"Types of world {type(world)} and local map {type(agent_local_map)} not matching or "
-                            f"not supported.")
+        if world.size != agent_local_map.size:
+            raise TypeError(f"Sizes of world {world.size} and agent_local_map {agent_local_map.size} do not match")
 
         # Generate angles
         for angle in self._angle_generator(self.start_angle, self.end_angle, self.resolution):
@@ -86,13 +64,6 @@ class RaycastingBresenham(EnvironmentPerceptionMethod):
                 # Break at objects (if activated)
                 if blocked_by_objects and not world.is_cell_empty(pos):
                     break
-
-    @staticmethod
-    def _hex_grid_line(
-            start_pos: tuple[int, int],
-            end_pos: tuple[int, int],
-    ) -> list[tuple[int, int]]:
-        pass
 
     @staticmethod
     def _bresenham_line(
@@ -136,14 +107,6 @@ class RaycastingBresenham(EnvironmentPerceptionMethod):
                 y += sy
             positions.append((x, y)) # Add endpoint
         return positions
-
-    def _get_hexagonal_raycast_endpoint(self,
-        agent_pos: tuple[int, int],
-        agent_orientation: int,
-        angle: int,
-        max_range: int,
-    ) -> tuple[int, int]:
-        pass
 
     def _get_orthogonal_raycast_endpoint(self,
         agent_pos: tuple[int, int],
