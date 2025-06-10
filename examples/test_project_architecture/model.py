@@ -75,6 +75,9 @@ class Exploration(Model):
                 cell=self.random.choices(ground_cells, k=initial_random_walk_robot),
                 view_radius=view_radius,
                 view_angle=view_angle,
+                # orientation=self.random.choices(
+                #     range(0, 360, 45), k=initial_random_walk_robot
+                # ),
                 view_resulution=view_resulution,
             )
 

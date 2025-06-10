@@ -14,15 +14,18 @@ class ExplorerRobot(CellAgent):
         self,
         model: Model,
         cell: Cell,
+        orientation: int,
         view_radius: int = 1,
         view_angle: int = 180,
         view_resolution: int = 4,
-        orientation: int = 180,
     ):
         super().__init__(model)
         self.cell = cell
         self.view_radius = view_radius
-        self.view_angle = view_angle
+        if view_angle == 360:
+            self.view_angle = 359
+        else:
+            self.view_angle = view_angle
         self.view_resolution = view_resolution
         self.orientation = orientation
         self.viewport: list[tuple[int, int]] = []
@@ -113,6 +116,7 @@ class ExplorerRobot(CellAgent):
                     err += dy
                 y += sy
             positions.append((x, y))  # Add endpoint
+
         return positions
 
     def _angle_generator(
