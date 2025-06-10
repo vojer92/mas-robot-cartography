@@ -1,3 +1,6 @@
+from agents.ground import Ground
+from agents.obstacle import Obstacle
+from agents.random_walk_robot import RandomWalkRobot
 from matplotlib.markers import MarkerStyle
 from mesa.experimental.devs import ABMSimulator
 from mesa.visualization import (
@@ -8,9 +11,6 @@ from mesa.visualization import (
     make_space_component,
 )
 
-from agents.ground import Ground
-from agents.obstacle import Obstacle
-from agents.random_walk_robot import RandomWalkRobot
 from model import Exploration
 
 # Pre-compute markers for different angles (e.g., every 5 degrees)

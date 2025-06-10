@@ -1,13 +1,12 @@
 import math
 
+from agents.ground import Ground
+from agents.obstacle import Obstacle
+from agents.random_walk_robot import RandomWalkRobot
 from mesa import Model
 from mesa.datacollection import DataCollector
 from mesa.discrete_space import OrthogonalMooreGrid
 from mesa.experimental.devs import ABMSimulator
-
-from agents.ground import Ground
-from agents.obstacle import Obstacle
-from agents.random_walk_robot import RandomWalkRobot
 
 OBSTACLES = [
     [(-2, 0), (-1, 0), (0, 0)],
