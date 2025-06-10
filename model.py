@@ -1,12 +1,13 @@
 import math
 
-from agents.ground import Ground
-from agents.obstacle import Obstacle
-from agents.random_walk_robot import RandomWalkRobot
 from mesa import Model
 from mesa.datacollection import DataCollector
 from mesa.discrete_space import OrthogonalMooreGrid
 from mesa.experimental.devs import ABMSimulator
+
+from agents.ground import Ground
+from agents.obstacle import Obstacle
+from agents.random_walk_robot import RandomWalkRobot
 
 OBSTACLES = [
     [(-2, 0), (-1, 0), (0, 0)],
@@ -24,9 +25,9 @@ class Exploration(Model):
         width=20,
         height=20,
         view_radius=1,
-        view_angle=180,
+        view_angle=90,
         view_resulution=32,
-        initial_random_walk_robot=0,
+        initial_random_walk_robot=1,
         seed=None,
         simulator: ABMSimulator = ABMSimulator(),
     ):
@@ -75,7 +76,7 @@ class Exploration(Model):
                 view_radius=view_radius,
                 view_angle=view_angle,
                 orientation=self.random.choices(
-                    range(0, 360, 45), k=initial_random_walk_robot
+                    range(0, 359, 45), k=initial_random_walk_robot
                 ),
                 view_resulution=view_resulution,
             )
