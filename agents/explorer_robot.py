@@ -34,9 +34,9 @@ class ExplorerRobot(CellAgent):
     def move(self):
         pass
 
+    @abstractmethod
     def step(self):
-        self._scan_environment()
-        self.move()
+        pass
 
     def _scan_environment(self):
         neighborhood = self.cell.get_neighborhood(
