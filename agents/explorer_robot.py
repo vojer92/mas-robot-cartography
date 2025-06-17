@@ -1,23 +1,19 @@
-import math
-from abc import abstractmethod
-from typing import Generator
+from abc import ABC, abstractmethod
+import heapq
 
 from mesa import Model
 from mesa.discrete_space import Cell, CellAgent
 
-from .ground import Ground
-from .obstacle import Obstacle
+from algorithms.manhattan_distance import calculate_manhattan_distance
 
 
-class ExplorerRobot(CellAgent):
+class ExplorerRobot(ABC, CellAgent):
     def __init__(
         self,
         model: Model,
         cell: Cell,
         orientation: int,
-        view_radius: int = 1,
-        view_angle: int = 180,
-        view_resolution: int = 4,
+
     ):
         super().__init__(model)
         self.cell = cell
@@ -38,108 +34,128 @@ class ExplorerRobot(CellAgent):
     def step(self):
         pass
 
-    def _scan_environment(self):
-        neighborhood = self.cell.get_neighborhood(
-            radius=self.view_radius, include_center=True
-        )
 
-        for angle in self._angle_generator(
-            self.view_angle, self.orientation, self.view_resolution
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------------------
+
+    # Route finding
+    class Node:
+        """
+        Represents a node in the A* search with position, cost from start, estimated cost to goal and parent reference.
+        """
+        def __init__(self,
+            pos: tuple[int, int],
+            real_costs_from_start: float = 0,
+            estimated_costs_till_goal: float = 0,
+            parent: 'Cell | None' = None
         ):
-            x0, y0 = self.cell.coordinate
-            dx = self.view_angle * math.cos(math.radians(self.orientation + angle))
-            dy = self.view_angle * math.sin(math.radians(self.orientation + angle))
-            end_pos = (round(x0 + dx), round(y0 + dy))
+            self.pos = pos
+            self.real_costs_from_start = real_costs_from_start
+            self.estimated_costs_till_goal = estimated_costs_till_goal
+            self.parent = parent
 
-            for pos in self._bresenham_line(self.cell.coordinate, end_pos):
+        def __lt__(self, other): #Comparisation method, necessary for heap
+            return self.cost < other.cost
 
-                if pos not in [neighbor.coordinate for neighbor in neighborhood]:
-                    break
+        @property
+        def cost(self) -> float:
+            return self.real_costs_from_start + self.estimated_costs_till_goal
 
-                if any(
-                    isinstance(agent, Obstacle)
-                    for agent in neighborhood.select(
-                        lambda cell: cell.coordinate == pos
-                    ).agents
-                ):
-                    break
-
-                self.viewport.append(pos)
-
-                if any(
-                    isinstance(agent, Ground)
-                    for agent in neighborhood.select(
-                        lambda cell: cell.coordinate == pos
-                    ).agents
-                ):
-                    for agent in neighborhood.select(
-                        lambda cell: cell.coordinate == pos
-                    ).agents:
-                        agent.explored = True
-
-    def _bresenham_line(
-        self, start_pos: tuple[int, int], end_pos: tuple[int, int]
-    ) -> list[tuple[int, int]]:
+    def _reconstruct_path(self, end_node: Node) -> list[tuple[int, int]]:
         """
-        Using Bresenham's line algorithm to list all grid cells (x, y) between start_pos and end_pos (incl.).
-        Those can be outside the grid environment. This is handled in further steps.
+        Reconstruct the path in reverse in context of the A* algorithm.
         """
-        x0, y0 = start_pos
-        x1, y1 = end_pos
+        path = []
+        current = end_node
+        while current:
+            path.append(current.pos)
+            current = current.parent
+        return path[::-1]
 
-        positions = []
-
-        dx = abs(x1 - x0)
-        dy = abs(y1 - y0)
-        x, y = x0, y0
-
-        sx = 1 if x1 > x0 else -1
-        sy = 1 if y1 > y0 else -1
-
-        if dx > dy:
-            err = dx / 2.0
-            while x != x1:
-                positions.append((x, y))
-                err -= dy
-                if err < 0:
-                    y += sy
-                    err += dx
-                x += sx
-            positions.append((x, y))  # Add endpoint
-        else:
-            err = dy / 2.0
-            while y != y1:
-                positions.append((x, y))
-                err -= dx
-                if err < 0:
-                    x += sx
-                    err += dy
-                y += sy
-            positions.append((x, y))  # Add endpoint
-
-        return positions
-
-    def _angle_generator(
-        self, view_angle: int, orientation: int, view_resolution: int
-    ) -> Generator[int, None, None]:
+    def find_path(self,
+        start_pos: tuple[int, int],
+        goal_pos: tuple[int, int],
+    ) -> list[tuple[int, int]] | None:
         """
-        Generator
-        Generate angles in the given range with the given resolution.
+        Route search using A* algorithm.
+        :return: List of positions representing the optimal path from start position to goal position.
         """
-        start_angle = round((orientation - (view_angle / 2) + 360) % 360)
-        end_angle = round((orientation + (view_angle / 2) + 360) % 360)
-        current_angle = start_angle
-        resolution = round(view_angle / view_resolution)
+        # Initialize structures and start cell
+        open_list = []  # Nodes to be evaluated
+        heapq.heapify(open_list)  # Converts open_list to heap (priority queue)
+        start_node = Node(
+            pos=start_pos,
+            real_costs_from_start=0,
+            estimated_costs_till_goal=calculate_manhattan_distance(start_pos, goal_pos),
+            parent=None
+        )
+        heapq.heappush(open_list, start_node)
 
-        if start_angle > end_angle:
-            while current_angle < 360:
-                yield current_angle
-                current_angle += resolution
-            current_angle = 0
-            while current_angle <= end_angle:
-                yield current_angle
-                current_angle += resolution
-        else:
-            while current_angle <= end_angle:
-                yield current_angle
-                current_angle += resolution
+        closed_set = set()  # Cells already evaluated. Set for faster in-operation
+
+        node_map = {start_pos: start_node}  # Link Cell-object to position for better accessibility
+
+        # Forward procession
+        while open_list:
+            current_node = heapq.heappop(open_list)  # Get first / cheapest entry from priority queue
+            if current_node.pos == goal_pos:
+                # Termination, continue with backward procession
+                return self._reconstruct_path(current_node)
+            closed_set.add(current_node.pos)  # Add to already evaluated nodes
+
+
+
+
+
+            valid_neighbors = [] # Only known and not occupied neighbor cells
+            for cell in self.cell.get_neighborhood(radius=1, include_center=False):
+                agents_in_cell = cell.agents
+                # Ceck if cell is known and
+                # >= 1 agent is blocking
+                #
+                if
+                    not any(getattr(agent,  "blocking", False) for agent in agents_in_cell)
+
+
+
+
+
+
+
+
+            for neighbor_pos in valid_neighbors:
+                if neighbor_pos in closed_set:
+                    continue
+                # If neighbor is not in node_map / unknown - create new node, add to open_list
+                # If the new path to this neighbor is cheaper than the  already known path - update the node, add to open_list again
+                new_real_costs_from_start = current_node.real_costs_from_start + 1
+                if (neighbor_pos not in node_map or
+                        new_real_costs_from_start < node_map[neighbor_pos].real_costs_from_start):
+                    neighbor_cell = Node(
+                        pos=neighbor_pos,
+                        real_costs_from_start=new_real_costs_from_start,
+                        estimated_costs_till_goal=calculate_manhattan_distance(neighbor_pos, goal_pos),
+                        parent=current_node
+                    )
+                    node_map[neighbor_pos] = neighbor_cell
+                    heapq.heappush(open_list, neighbor_cell)
+                # No path found
+            return None

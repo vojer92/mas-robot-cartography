@@ -1,4 +1,4 @@
-def calculate_manhattan_distance(
+def manhattan_distance(
         pos_a: tuple[int, int],
         pos_b: tuple[int, int]
     ) -> float:
