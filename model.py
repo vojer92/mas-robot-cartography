@@ -1,11 +1,13 @@
 import math
 
 from mesa import Model, Agent
-from mesa.discrete_space import PropertyLayer
 from mesa.datacollection import DataCollector
 from mesa.discrete_space import OrthogonalMooreGrid
 from mesa.experimental.devs import ABMSimulator
 
+from agents.explorer_robot import ExplorerRobot
+from agents.ground import Ground
+from agents.obstacle import Obstacle
 from agents.random_walk_robot import RandomWalkRobot
 
 OBSTACLES = [
@@ -24,9 +26,9 @@ class Exploration(Model):
         height=20,
         view_radius=1,
         view_angle=90,
-        view_resulution=32,
+        view_resolution=32,
         initial_no_robots=1,
-        robot_type: Agent = RandomWalkRobot,
+        robot_type: ExplorerRobot = RandomWalkRobot,
         seed=None,
         simulator: ABMSimulator = ABMSimulator(),
     ):
@@ -47,23 +49,6 @@ class Exploration(Model):
             random=self.random,
         )
 
-        # Property Layer if cells are already known or still unknown
-        known_layer = PropertyLayer(
-            name = "known",
-            dimensions = self.grid.dimensions,
-            default_value = False,
-        )
-        self.grid.add_property(known_layer)
-
-        # Property Layer for obstacles
-        obstacle_layer = PropertyLayer(
-            name = "obstacle",
-            dimensions = self.grid.dimensions,
-            default_value = False,
-        )
-        self.grid.add_property(obstacle_layer)
-
-        # TODO: Auf Property Layer anpassen
         model_reporter = {
             "Explored": lambda m: len(
                 [
@@ -78,13 +63,35 @@ class Exploration(Model):
 
         self._place_obstacles()
 
-        self._place_agents()
+        free_cells = [
+            cell for cell in self.grid.all_cells if not any(isinstance(agent, Obstacle) for agent in cell.agents)
+        ]
+
+        # Place Ground-agents in all cells without unmobile obstacles
+        # Needs to be reviewed and manybe changed for mobile obstacles
+        for cell in free_cells:
+            Ground(self, cell=cell)
+
+        # Place k robots random on free cells
+        if self.initial_no_robots:
+            robot_type.create_agents(
+                self,
+                self.initial_no_robots,
+                cell=self.random.sample(free_cells, k=self.initial_no_robots),
+                # Sample instead of choice to avoid duplicates
+                # k have to be >= ground_cells.len! If not sample throws error.
+                view_radius=view_radius,
+                view_angle=view_angle,
+                orientation=self.random.choices(
+                    range(0, 315, 45), k=self.initial_no_robots
+                ),
+                view_resolution=view_resolution,
+            )
 
         self.running = True
         self.datacollector.collect(self)
 
     def step(self):
-        # TODO: Adjust to different agent types
         if self.agents:
             self.agents_by_type[self.robot_type].shuffle_do("step")
 
@@ -105,32 +112,4 @@ class Exploration(Model):
                 )
                 # Transfer list (usually 1, but also 0 or >1 possible) to coordinate of 1 cell
                 if target_cells.cells:
-                    self.grid.obstacle[target_cells.cells[0].coordinate] = True
-
-    def _place_agents(self):
-        free_cells = self.grid.all_cells.select(
-            lambda cell: not self.grid.obstacle[cell.coordinate]
-        ).cells
-
-        # TODO: Hard copy for every agent type
-        if self.initial_random_walk_robot:
-
-
-            start_cells = self.random.sample(free_cells, k=initial_random_walk_robot)
-            # Sample instead of choice to avoid duplicates
-            # k have to be >= ground_cells.len! If not sample throws error.
-
-            RandomWalkRobot.create_agents(
-                self,
-                initial_random_walk_robot,
-                cell=start_cells,
-                view_radius=view_radius,
-                view_angle=view_angle,
-                orientation=self.random.choices(
-                    range(0, 315, 45), k=initial_random_walk_robot
-                ),
-                view_resulution=view_resulution,
-            )
-
-            for cell in start_cells:
-                self.grid.known[cell.coordinate] = True
+                    Obstacle(self, cell=target_cells.cells[0])

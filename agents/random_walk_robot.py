@@ -14,7 +14,7 @@ class RandomWalkRobot(ExplorerRobot):
         cell: Cell,
         view_radius: int = 1,
         view_angle: int = 180,
-        view_resulution: int = 4,
+        view_resolution: int = 4,
         orientation: int = -90,
     ):
         super().__init__(
@@ -22,7 +22,7 @@ class RandomWalkRobot(ExplorerRobot):
             cell,
             view_radius=view_radius,
             view_angle=view_angle,
-            view_resolution=view_resulution,
+            view_resolution=view_resolution,
             orientation=orientation,
         )
 
