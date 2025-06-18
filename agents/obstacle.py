@@ -6,3 +6,4 @@ class Obstacle(FixedAgent):
     def __init__(self, model: Model, cell: Cell) -> None:
         super().__init__(model)
         self.cell = cell
+        self.blocking = True
