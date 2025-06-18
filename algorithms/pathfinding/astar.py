@@ -80,7 +80,8 @@ class AStar(Pathfinder):
             # Check neighbor cells
             for cell in neighbor_cells:
                 # Check if cell is blocked by other agent
-                if any(getattr(agent, "blocking", False) is True for agent in cell.agents):
+                # getattr, because e.g. Ground-agents dont have blocking properties!
+                if any(getattr(agent, "cell_blocking", False) is True for agent in cell.agents):
                     continue
 
                 # Check if cell is already explored

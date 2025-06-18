@@ -6,4 +6,5 @@ class Obstacle(FixedAgent):
     def __init__(self, model: Model, cell: Cell) -> None:
         super().__init__(model)
         self.cell = cell
-        self.blocking = True
+        self.cell_blocking = True # Blocking of cell for moving agents
+        self.view_blocking = True # Blocking of environment perception for other agents
