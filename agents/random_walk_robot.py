@@ -51,5 +51,5 @@ class RandomWalkRobot(ExplorerRobot):
         )
 
     def step(self):
-        self._scan_environment()
+        self.scan_environment()
         self.move()
