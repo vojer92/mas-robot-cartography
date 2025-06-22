@@ -13,8 +13,8 @@ class RandomWalkRobot(ExplorerRobot):
         model: Model,
         cell: Cell,
         view_radius: int = 1,
-        view_angle: int = 180,
-        view_resolution: int = 4,
+        view_angle: int = 90,
+        view_resolution: int = 5,
         orientation: int = -90,
     ):
         super().__init__(
@@ -36,18 +36,15 @@ class RandomWalkRobot(ExplorerRobot):
         current_position = self.cell.coordinate
         self.cell = cells_in_viewport.select_random_cell()
         target_position = self.cell.coordinate
-        self.orientation = (
-            round(
-                (
-                    math.degrees(
-                        math.atan2(
-                            target_position[0] - current_position[0],
-                            target_position[1] - current_position[1],
-                        )
+        self.orientation = self.normalize_round45_angle(
+            (
+                math.degrees(
+                    math.atan2(
+                        target_position[1] - current_position[1],
+                        target_position[0] - current_position[0],
                     )
                 )
             )
-            * -1
         )
 
     def step(self):

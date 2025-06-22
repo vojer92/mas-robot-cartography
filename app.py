@@ -15,7 +15,7 @@ from model import Exploration
 
 # Pre-compute markers for different angles (e.g., every 5 degrees)
 MARKER_CACHE = {}
-for angle in range(0, 360, 5):
+for angle in range(0, 360, 45):
     marker = MarkerStyle(10)
     marker._transform = marker.get_transform().rotate_deg(angle)
     MARKER_CACHE[angle] = marker
@@ -57,10 +57,10 @@ model_params = {
         "value": 42,
         "label": "Random Seed",
     },
-    "initial_random_walk_robot": Slider("Random Walk Robot Population", 0, 0, 20),
+    "initial_no_robots": Slider("Robot Population", 1, 1, 10),
     "view_radius": Slider("View Radius", 1, 1, 5),
-    "view_angle": Slider("View Angle", 180, 45, 360, 45),
-    "view_resulution": Slider("View Resulution", 32, 10, 62),
+    "view_angle": Slider("View Angle", 90, 45, 360, 45),
+#    "view_resulution": Slider("View Resulution", 5, 10, 62),
 }
 
 

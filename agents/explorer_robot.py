@@ -17,10 +17,10 @@ class ExplorerRobot(ABC, CellAgent):
         self,
         model: Model,
         cell: Cell,
-        view_radius: int = 3,
-        view_angle: int = 180,
+        view_radius: int = 1,
+        view_angle: int = 90,
         view_resolution: int = 5,
-        orientation: int = 0,
+        orientation: int = -90,
     ):
         super().__init__(model)
         self.cell = cell
@@ -45,6 +45,16 @@ class ExplorerRobot(ABC, CellAgent):
     def step(self):
         pass
 
+
+    @staticmethod
+    def normalize_round45_angle(angle):
+        """
+        Normalize any angle to the nearest multiple of 45 degrees in [0, 360).
+        This is necessary to match the available markers for agent orientation visualization.
+        """
+        return int(45 * round((angle + 360) % 360 / 45)) % 360
+
+
     def scan_environment(self) -> list[tuple[int, int]]:
         """
         Uses Raycasts with Bresenham's line algorithm to scan the environment in a given area.
@@ -57,16 +67,16 @@ class ExplorerRobot(ABC, CellAgent):
         )
         allowed_coordinates = {cell.coordinate for cell in neighbor_cells}
 
-        for angle in RaycastingBresenham._angle_generator(
+        for angle in self._angle_generator(
                 self.view_angle, self.view_resolution
         ):
             # Calculate Raycasting end-positions
             x0, y0 = self.cell.coordinate
-            dx = self.view_radius * math.cos(math.radians(self..orientation + angle))
-            dy = self.view_radius * math.sin(math.radians(self.orientation + angle))
+            dx = self.view_radius * math.cos(math.radians(self.orientation + angle + 90))
+            dy = self.view_radius * math.sin(math.radians(self.orientation + angle + 90))
             end_pos = (round(x0 + dx), round(y0 + dy))
 
-            for pos in RaycastingBresenham._bresenham_line(self.cell.coordinate, end_pos):
+            for pos in self._bresenham_line(self.cell.coordinate, end_pos):
                 # Check for grid borders
                 if pos not in allowed_coordinates:
                     break
@@ -90,6 +100,7 @@ class ExplorerRobot(ABC, CellAgent):
                         f"Environment Error: Cell {pos} has no Obstacle and no Ground agent.")
                 ground_agents[0].explored = True
 
+        self.viewport = viewport
         return viewport
 
     @staticmethod

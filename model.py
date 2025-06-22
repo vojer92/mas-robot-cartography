@@ -26,7 +26,7 @@ class Exploration(Model):
         height=20,
         view_radius=1,
         view_angle=90,
-        view_resolution=32,
+        view_resolution=5,
         initial_no_robots=1,
         robot_type: ExplorerRobot = RandomWalkRobot,
         seed=None,
@@ -68,7 +68,7 @@ class Exploration(Model):
         ]
 
         # Place Ground-agents in all cells without unmobile obstacles
-        # Needs to be reviewed and manybe changed for mobile obstacles
+        # Needs to be reviewed and maybe changed for mobile obstacles
         for cell in free_cells:
             Ground(self, cell=cell)
 
