@@ -1,23 +1,26 @@
+from abc import ABC, abstractmethod
 import math
-from abc import abstractmethod
 from typing import Generator
 
 from mesa import Model
 from mesa.discrete_space import Cell, CellAgent
 
-from .ground import Ground
-from .obstacle import Obstacle
+from agents.ground import Ground
 
 
-class ExplorerRobot(CellAgent):
+class ExplorerRobot(ABC, CellAgent):
+    """
+    Base class for all exploring robots.
+    Includes scan_environment-function, which implements RaycastingBresenham-logic for environment perception.
+    """
     def __init__(
         self,
         model: Model,
         cell: Cell,
-        orientation: int,
         view_radius: int = 1,
-        view_angle: int = 180,
-        view_resolution: int = 4,
+        view_angle: int = 90,
+        view_resolution: int = 5,
+        orientation: int = -90,
     ):
         super().__init__(model)
         self.cell = cell
@@ -28,61 +31,86 @@ class ExplorerRobot(CellAgent):
             self.view_angle = view_angle
         self.view_resolution = view_resolution
         self.orientation = orientation
+
+        self.cell_blocking = True # Blocking of cell for moving agents
+        self.scan_blocking = False # Blocking of environment perception for other agents
+
         self.viewport: list[tuple[int, int]] = []
 
     @abstractmethod
     def move(self):
         pass
 
+    @abstractmethod
     def step(self):
-        self._scan_environment()
-        self.move()
+        pass
 
-    def _scan_environment(self):
-        neighborhood = self.cell.get_neighborhood(
+
+    @staticmethod
+    def normalize_round45_angle(angle):
+        """
+        Normalize any angle to the nearest multiple of 45 degrees in [0, 360).
+        This is necessary to match the available markers for agent orientation visualization.
+        """
+        return int(45 * round((angle + 360) % 360 / 45)) % 360
+
+
+    def scan_environment(self) -> list[tuple[int, int]]:
+        """
+        Uses Raycasts with Bresenham's line algorithm to scan the environment in a given area.
+        Scanning means transferring properties and objects from the environment to the agents local memory.
+        """
+        viewport = []
+
+        neighbor_cells = self.cell.get_neighborhood(
             radius=self.view_radius, include_center=True
         )
+        allowed_coordinates = {cell.coordinate for cell in neighbor_cells}
 
         for angle in self._angle_generator(
-            self.view_angle, self.orientation, self.view_resolution
+                self.view_angle, self.view_resolution
         ):
+            # Calculate Raycasting end-positions
             x0, y0 = self.cell.coordinate
-            dx = self.view_angle * math.cos(math.radians(self.orientation + angle))
-            dy = self.view_angle * math.sin(math.radians(self.orientation + angle))
+            dx = self.view_radius * math.cos(math.radians(self.orientation + angle + 90))
+            dy = self.view_radius * math.sin(math.radians(self.orientation + angle + 90))
             end_pos = (round(x0 + dx), round(y0 + dy))
 
             for pos in self._bresenham_line(self.cell.coordinate, end_pos):
-
-                if pos not in [neighbor.coordinate for neighbor in neighborhood]:
+                # Check for grid borders
+                if pos not in allowed_coordinates:
                     break
 
-                if any(
-                    isinstance(agent, Obstacle)
-                    for agent in neighborhood.select(
-                        lambda cell: cell.coordinate == pos
-                    ).agents
-                ):
-                    break
+                current_cells = list(neighbor_cells.select(lambda cell: cell.coordinate == pos))
+                if len(current_cells) !=1:
+                    raise RuntimeError(f"Cell selection error. Expected 1 cell at position {pos}, found {len(current_cells)}")
+                current_cell = current_cells[0]
 
-                self.viewport.append(pos)
+                # Scan is blocked by some agents
+                if any(getattr(agent, "view_blocking", False) is True for agent in current_cell.agents):
+                    continue
 
-                if any(
-                    isinstance(agent, Ground)
-                    for agent in neighborhood.select(
-                        lambda cell: cell.coordinate == pos
-                    ).agents
-                ):
-                    for agent in neighborhood.select(
-                        lambda cell: cell.coordinate == pos
-                    ).agents:
-                        agent.explored = True
+                # Add position to viewport
+                viewport.append(pos)
 
+                # Mark cells as explored via Ground-agents explored-property
+                ground_agents = [agent for agent in current_cell.agents if isinstance(agent, Ground)]
+                if not ground_agents:
+                    raise RuntimeError(
+                        f"Environment Error: Cell {pos} has no Obstacle and no Ground agent.")
+                ground_agents[0].explored = True
+
+        self.viewport = viewport
+        return viewport
+
+    @staticmethod
     def _bresenham_line(
-        self, start_pos: tuple[int, int], end_pos: tuple[int, int]
-    ) -> list[tuple[int, int]]:
+                        start_pos: tuple[int, int],
+                        end_pos: tuple[int, int]
+                        ) -> list[tuple[int, int]]:
         """
-        Using Bresenham's line algorithm to list all grid cells (x, y) between start_pos and end_pos (incl.).
-        Those can be outside the grid environment. This is handled in further steps.
+        Using Bresenham's line algorithm to list all grid cell positions (x, y) between start_pos and end_pos (incl.).
+        Those can be outside the grid environment. This is handled in higher-level steps.
         """
         x0, y0 = start_pos
         x1, y1 = end_pos
@@ -119,27 +147,23 @@ class ExplorerRobot(CellAgent):
 
         return positions
 
+    @staticmethod
     def _angle_generator(
-        self, view_angle: int, orientation: int, view_resolution: int
-    ) -> Generator[int, None, None]:
+                         view_angle: int, # View angle in degrees
+                         view_resolution: int = 5 # Angle resolution in degrees
+                         ) -> Generator[float, None, None]:
         """
         Generator
-        Generate angles in the given range with the given resolution.
+        Generate angles in the given angle (symmetric) with the given resolution.
         """
-        start_angle = round((orientation - (view_angle / 2) + 360) % 360)
-        end_angle = round((orientation + (view_angle / 2) + 360) % 360)
-        current_angle = start_angle
-        resolution = round(view_angle / view_resolution)
+        # Check for valid parameters
+        if not 0 < view_angle <= 360 :
+            raise TypeError(f"view_angle hat to be in between 1 and 360 degrees: {view_angle}")
 
-        if start_angle > end_angle:
-            while current_angle < 360:
-                yield current_angle
-                current_angle += resolution
-            current_angle = 0
-            while current_angle <= end_angle:
-                yield current_angle
-                current_angle += resolution
-        else:
-            while current_angle <= end_angle:
-                yield current_angle
-                current_angle += resolution
+        # If necessary differ a little from the exact view_resolution to include start_angle and end_angle
+        n_steps = int(round(view_angle / view_resolution))
+        if n_steps < 1:
+            n_steps = 1
+        for i in range(n_steps + 1):
+            angle = -view_angle / 2 + i * (view_angle / n_steps)
+            yield angle
