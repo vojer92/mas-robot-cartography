@@ -10,7 +10,7 @@ class PathfinderFactory:
     def give_pathfinder(
             agent: CellAgent,
             name: PathfinderEnum,
-            heuristic: Callable[[tuple, tuple], float] = lambda a,b: np.sum(np.abs(np.array(a) - np.array(b))), # Manhattan distance as default
+            heuristic: Callable[[tuple, tuple], float] = lambda a,b: np.linalg.norm(a - b), # Euclidean distance as default
             *args, **kwargs
     ) -> Pathfinder:
         match name:
