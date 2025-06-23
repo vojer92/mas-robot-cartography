@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from environment.multi_grid_with_properties import MultiGridWithProperties
 
 class Pathfinder(ABC):
     """

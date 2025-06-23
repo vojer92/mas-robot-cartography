@@ -87,7 +87,7 @@ class ExplorerRobot(ABC, CellAgent):
                 current_cell = current_cells[0]
 
                 # Scan is blocked by some agents
-                if any(getattr(agent, "view_blocking", False) is True for agent in current_cell.agents):
+                if any(getattr(agent, "scan_blocking", False) is True for agent in current_cell.agents):
                     continue
 
                 # Add position to viewport
