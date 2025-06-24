@@ -11,10 +11,9 @@ class MovementGoalFinderFactory:
             agent: CellAgent,
             name: MovementGoalFinderEnum,
             # TODO: Adjust Parameters
-            heuristic: Callable[[tuple, tuple], float] = lambda a,b: np.linalg.norm(a - b), # Euclidean distance as default
             *args, **kwargs
     ) -> MovementGoalFinder:
         match name:
-            case MovementGoalFinder.ORIGINAL_FBE:
+            case MovementGoalFinderEnum.ORIGINAL_FBE:
                 # TODO: Adjust Parameters
                 return OriginalFBE(agent, *args, **kwargs)
