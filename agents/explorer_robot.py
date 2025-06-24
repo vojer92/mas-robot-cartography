@@ -6,6 +6,7 @@ from mesa import Model
 from mesa.discrete_space import Cell, CellAgent
 
 from agents.ground import Ground
+from communication.tile_status import TileStatus #TODO: Discuss exact type (grid, dict with TileStatus, ...)
 
 
 class ExplorerRobot(ABC, CellAgent):
@@ -38,7 +39,13 @@ class ExplorerRobot(ABC, CellAgent):
             False  # Blocking of environment perception for other agents
         )
 
-        self.viewport: list[tuple[int, int]] = []
+        self.viewport: list[tuple[int, int]] = [] # Current view
+
+        # Local memory
+        # TODO: Discuss which type / form
+        self.known_tiles: dict[tuple[int, int], TileStatus] = {}
+        self.agent_positions: dict[tuple[int, int], int] = {}
+
 
     @abstractmethod
     def move(self):
