@@ -5,7 +5,7 @@ from algorithms.movement_goal_selection.nearest_biggest_frontier import NearestB
 from algorithms.movement_goal_selection.movement_goal_selector import MovementGoalSelector
 from algorithms.movement_goal_selection.movement_goal_selector_enum import MovementGoalSelectorEnum
 
-class MovementGoalFinderFactory:
+class MovementGoalSelectorFactory:
     @staticmethod
     def give_movement_goal_selector(
             agent: CellAgent,
