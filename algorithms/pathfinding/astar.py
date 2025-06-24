@@ -74,6 +74,7 @@ class AStar(Pathfinder):
             closed_set.add(current_node.pos)
 
             # Get all neighbor cells
+            # TODO: Change to local environment memory!!!
             neighbor_cells = self.agent.model.grid[current_node.pos].get_neighborhood(
                     radius=1, include_center=False)
 
