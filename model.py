@@ -1,10 +1,11 @@
 import math
 
-from mesa import Model, Agent
+from mesa import Agent, Model
 from mesa.datacollection import DataCollector
 from mesa.discrete_space import OrthogonalMooreGrid
 from mesa.experimental.devs import ABMSimulator
 
+from agents.blackboard import Blackboard
 from agents.explorer_robot import ExplorerRobot
 from agents.ground import Ground
 from agents.obstacle import Obstacle
@@ -18,6 +19,7 @@ OBSTACLES = [
     [(0, -3), (0, -2), (0, -1), (0, 0)],
     [(0, -4), (0, -3), (0, -2), (0, -1), (0, 0)],
 ]
+
 
 class Exploration(Model):
     def __init__(
@@ -64,7 +66,9 @@ class Exploration(Model):
         self._place_obstacles()
 
         free_cells = [
-            cell for cell in self.grid.all_cells if not any(isinstance(agent, Obstacle) for agent in cell.agents)
+            cell
+            for cell in self.grid.all_cells
+            if not any(isinstance(agent, Obstacle) for agent in cell.agents)
         ]
 
         # Place Ground-agents in all cells without unmobile obstacles

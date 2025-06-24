@@ -34,18 +34,21 @@ class RandomWalkRobot(ExplorerRobot):
         )
 
         current_position = self.cell.coordinate
-        self.cell = cells_in_viewport.select_random_cell()
-        target_position = self.cell.coordinate
-        self.orientation = self.normalize_round45_angle(
-            (
-                math.degrees(
-                    math.atan2(
-                        target_position[1] - current_position[1],
-                        target_position[0] - current_position[0],
+        if cells_in_viewport:
+            self.cell = cells_in_viewport.select_random_cell()
+            target_position = self.cell.coordinate
+            self.orientation = self.normalize_round45_angle(
+                (
+                    math.degrees(
+                        math.atan2(
+                            target_position[1] - current_position[1],
+                            target_position[0] - current_position[0],
+                        )
                     )
                 )
             )
-        )
+        else:
+            self.orientation = self.normalize_round45_angle(self.random.randint(0, 360))
 
     def step(self):
         self.scan_environment()
