@@ -188,3 +188,4 @@ class ExplorerRobot(ABC, CellAgent):
         for i in range(n_steps + 1):
             angle = -view_angle / 2 + i * (view_angle / n_steps)
             yield angle
+

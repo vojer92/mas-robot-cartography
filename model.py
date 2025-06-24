@@ -117,3 +117,4 @@ class Exploration(Model):
                 # Transfer list (usually 1, but also 0 or >1 possible) to coordinate of 1 cell
                 if target_cells.cells:
                     Obstacle(self, cell=target_cells.cells[0])
+
