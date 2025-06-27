@@ -39,12 +39,13 @@ class FBERobot(ExplorerRobot):
         self.goal_selector = MovementGoalSelectorFactory.give_movement_goal_selector(self, MovementGoalSelectorEnum.NEAREST_BIGGEST_FRONTIER)
 
 
-    def move(self):
-
-
-    def step(self):
+     def step(self):
         # 1. Environment perception
         self.scan_environment()
 
 
 
+        #TODO:
+        # If there is no connection of already explored free cells from agent position to goal position, it is unable to
+        # calculate a path towards it!
+        # Kind of like alternative strategy is necessary.

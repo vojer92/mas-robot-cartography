@@ -1,10 +1,9 @@
 from typing import Callable
 import heapq
-from mesa.discrete_space import CellAgent #For all cell agents, not only explorer robots
-from algorithms.pathfinding.pathfinder import Pathfinder
+import math
 
-from agents.obstacle import Obstacle
-from agents.ground import Ground
+from agents.explorer_robot import ExplorerRobot
+from algorithms.pathfinding.pathfinder import Pathfinder
 
 class Node:
     """
@@ -15,7 +14,7 @@ class Node:
             pos: tuple[int, int],
             real_costs_from_start: float=0,
             estimated_costs_till_goal: float=0,
-            parent: 'Cell | None'=None
+            parent: 'Node | None'=None
         ):
         self.pos = pos
         self.real_costs_from_start = real_costs_from_start
@@ -31,7 +30,7 @@ class Node:
 
 class AStar(Pathfinder):
     def __init__(self,
-            agent: CellAgent,
+            agent: ExplorerRobot,
             heuristic: Callable[[tuple, tuple], float],
         ):
         self.agent = agent
@@ -41,7 +40,7 @@ class AStar(Pathfinder):
         goal_pos: tuple[int, int],
     ) -> 'list[tuple[int, int]] | None':
         """
-        Path finding using AStar algorithm.
+        Path finding in Moore-grid using AStar algorithm.
         :return: List of positions representing the optimal path from agents
             current position to goal position.
         """
@@ -73,33 +72,26 @@ class AStar(Pathfinder):
             # Add position to already evaluated positions
             closed_set.add(current_node.pos)
 
-            # Get all neighbor cells
-            # TODO: Change to local environment memory!!!
-            neighbor_cells = self.agent.model.grid[current_node.pos].get_neighborhood(
-                    radius=1, include_center=False)
+            # Check all already explored neighbor cells
+            for neighbor_pos in self.agent.local_memory.get_known_neighbor_positions(current_node.pos):
 
-            # Check neighbor cells
-            for cell in neighbor_cells:
-                # Check if cell is blocked by other agent
-                # getattr, because e.g. Ground-agents dont have blocking properties!
-                if any(getattr(agent, "cell_blocking", False) is True for agent in cell.agents):
-                    continue
-
-                # Check if cell is already explored
-                ground_agents = [agent for agent in cell.agents if isinstance(agent, Ground)]
-                if not ground_agents:
-                    raise RuntimeError(f"Environment Error: Cell {cell.coordinate} has no Obstacle and no Ground agent.")
-                if not ground_agents[0].explored:
-                    continue
-
-                # Check if neighbor was already evaluated
-                neighbor_pos = cell.coordinate
+                # Check if neighbor cell was already evaluated
                 if neighbor_pos in closed_set:
+                    continue
+
+                cell_info = self.agent.local_memory.grid_info[neighbor_pos]
+
+                # Check if cell is blocked by other agent
+                if any(agent_info.cell_blocking for agent_info in cell_info.agents):
                     continue
 
                 # If neighbor is not in node_map / unknown - create new node, add to open_list
                 # If the new path to this neighbor is cheaper than the  already known path - update the node add to open_list again
-                new_real_costs_from_start = current_node.real_costs_from_start + 1
+                step_cost = 1
+                #NOTE:
+                # To calculate higher costs for diagonal movement change to
+                # step_cost = 1 if dx == 0 or dy == 0 else math.sqrt(2)
+                new_real_costs_from_start = current_node.real_costs_from_start + step_cost
                 if (neighbor_pos not in node_map or
                         new_real_costs_from_start < node_map[neighbor_pos].real_costs_from_start):
                     neighbor_cell = Node(

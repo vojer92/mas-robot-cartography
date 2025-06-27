@@ -10,27 +10,12 @@ from mesa.discrete_space import Cell, CellAgent
 
 from agents.ground import Ground
 
-#class TileStatus(Enum):
-#    FREE = auto()
-#    ROBOT = auto()
-#    OBSTACLE = auto()
-#
-#class FrontierStatus(Enum):
-#    IN_WORK = auto()
-#    OPEN = auto()
-#
-#class LocalMemory:
-#    def __init__(self):
-#        self.tile_status = {}
-#        self.frontiers = {}
-
-
-
 @dataclass
 class AgentInfo:
-    agent_id: int
+    unique_id: int
     agent_type: str
     cell_blocking: bool
+    moving: bool
 
 @dataclass
 class CellInfo:
@@ -46,15 +31,51 @@ class FrontierInfo:
     agent_id: Optional[int] = None
 
 class LocalMemory:
+    MOORE_NEIGHBORS = [(-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1)]
+
     def __init__(self):
-        self.grid_info = {} # {(x,y): CellInfo}
-        self.frontier_info = {} # {(x,y): FrontierInfo}
+        self.grid_info: dict[tuple[int, int], CellInfo] = {} # {(x,y): CellInfo}
+        self.frontier_info: dict[tuple[int, int], FrontierInfo] = {} # {(x,y): FrontierInfo}
+
+    def get_known_neighbor_positions(self,
+        pos: tuple[int, int],
+    ) -> list[tuple[int, int]]:
+        """
+        :Return: Returns all neighboring cell positions, which are in the local memory (= already explored).
+        """
+        offsets = self.MOORE_NEIGHBORS
+        return [
+            (pos[0] + dx, pos[1] + dy)
+            for dx, dy in offsets
+            if (pos[0]+dx, pos[1]+dy) in self.grid_info
+        ]
+
+    def get_all_neighbor_positions(self,
+        pos: tuple[int, int]
+    ) -> list[tuple[int, int]]:
+        """
+        :Return: Returns all neighboring cell positions.
+        """
+        offsets = self.MOORE_NEIGHBORS
+        return [
+            (pos[0] + dx, pos[1] + dy)
+            for dx, dy in offsets
+        ]
+
 
 class ExplorerRobot(ABC, CellAgent):
     """
     Base class for all exploring robots.
     Includes scan_environment-function, which implements Raycasting and Bresenham-logic for environment perception.
     """
+
+    #NOTE:
+    # If other robot types without environment perception are introduced, a base base class with some of the properties
+    # is necessary. AStar & OriginalFrontierBasedExploration & NearestBiggestFrontier has to be changed to this new base base class.
+
+    #NOTE:
+    # Although RandomWalkRobot doesn't require local memory, providing a separate scan_environment implementation
+    # would lead to significant code duplication and poorer maintainability, so we intentionally avoid it.
 
     def __init__(
         self,
@@ -80,15 +101,11 @@ class ExplorerRobot(ABC, CellAgent):
         self.scan_blocking = (
             False  # Blocking of environment perception for other agents
         )
+        self.moving = True
 
         self.viewport: list[tuple[int, int]] = [] # Current view
 
         self.local_memory = LocalMemory() # Local memory
-
-
-#    @abstractmethod
-#    def move(self):
-#        pass
 
     @abstractmethod
     def step(self):
@@ -106,7 +123,7 @@ class ExplorerRobot(ABC, CellAgent):
         """
         Uses Raycasts with Bresenham's line algorithm to scan the environment in a given area.
         Scanning means transferring properties and objects from the environment to the agents local memory.
-        :Return: Current viewport as list of position-tuples.
+        :Return: Current viewport as list of position-tuples. The viewport doesn't include cells with scan_blocking agents on it.
         """
         viewport = []
 
@@ -131,6 +148,7 @@ class ExplorerRobot(ABC, CellAgent):
                 if pos not in allowed_coordinates:
                     break
 
+                # Get cell for pos
                 current_cells = list(
                     neighbor_cells.select(lambda cell: cell.coordinate == pos)
                 )
@@ -140,37 +158,23 @@ class ExplorerRobot(ABC, CellAgent):
                     )
                 current_cell = current_cells[0]
 
+                # Check if pos is already explored. If not add to local memory.
+                if not pos in self.local_memory.grid_info:
+                    self.local_memory.grid_info[pos] = CellInfo(agents=[])
 
-
-
-
-
-
-
-
-
-
-
-
-                # Scan is blocked by some agents
-                if any(
-                    getattr(agent, "scan_blocking", False) is True
+                # Transfer all agents to local memory
+                # Except ground agents, because explored property is met by existing of an entry to a position
+                cell_info = self.local_memory.grid_info[pos]
+                cell_info.agents = [
+                    AgentInfo(
+                        unique_id=agent.unique_id,
+                        agent_type=type(agent).__name__,
+                        cell_blocking=getattr(agent, "cell_blocking", False),
+                        moving=getattr(agent, "moving", False),
+                    )
                     for agent in current_cell.agents
-                ):
-                    continue
-
-
-
-
-
-
-
-
-
-
-
-                # Add position to viewport
-                viewport.append(pos)
+                    if not isinstance(agent, Ground)
+                ]
 
                 # Mark cells as explored via Ground-agents explored-property
                 ground_agents = [
@@ -178,13 +182,19 @@ class ExplorerRobot(ABC, CellAgent):
                 ]
                 if not ground_agents:
                     raise RuntimeError(
-                        f"Environment Error: Cell {pos} has no Obstacle and no Ground agent."
+                        f"Environment Error: Cell {pos} has no Ground agent."
                     )
                 ground_agents[0].explored = True
 
+                # Scan of the subsequent cells is blocked by some agents
+                if any(
+                    getattr(agent, "scan_blocking", False) is True
+                    for agent in current_cell.agents
+                ):
+                    continue
 
-
-
+                # Add position to viewport (only non-blocked)
+                viewport.append(pos)
 
         return viewport
 

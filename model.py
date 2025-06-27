@@ -63,20 +63,25 @@ class Exploration(Model):
 
         self.datacollector = DataCollector(model_reporter)
 
+        # Place (unexplored) Ground-agents in all cells
+        for cell in self.grid.cells:
+            Ground(self, cell=cell)
+
+        # Place obstacles
         self._place_obstacles()
 
+        # Place k robots random on free cells
         free_cells = [
             cell
             for cell in self.grid.all_cells
             if not any(isinstance(agent, Obstacle) for agent in cell.agents)
         ]
 
-        # Place Ground-agents in all cells without unmobile obstacles
-        # Needs to be reviewed and maybe changed for mobile obstacles
-        for cell in free_cells:
-            Ground(self, cell=cell)
+#        # Place Ground-agents in all cells without unmobile obstacles
+#        # Needs to be reviewed and maybe changed for mobile obstacles
+#        for cell in free_cells:
+#            Ground(self, cell=cell)
 
-        # Place k robots random on free cells
         if self.initial_no_robots:
             robot_type.create_agents(
                 self,
