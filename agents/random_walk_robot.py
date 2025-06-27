@@ -26,16 +26,48 @@ class RandomWalkRobot(ExplorerRobot):
             orientation=orientation,
         )
 
-    def move(self):
-        neighborhood = self.cell.get_neighborhood(radius=1)
+#    def move(self):
+#        neighborhood = self.cell.get_neighborhood(radius=1)
+#
+#        cells_in_viewport = neighborhood.select(
+#            lambda cell: cell.coordinate in self.viewport
+#        )
+#
+#        current_position = self.cell.coordinate
+#        if cells_in_viewport:
+#            self.cell = cells_in_viewport.select_random_cell()
+#            target_position = self.cell.coordinate
+#            self.orientation = self.normalize_round45_angle(
+#                (
+#                    math.degrees(
+#                        math.atan2(
+#                            target_position[1] - current_position[1],
+#                            target_position[0] - current_position[0],
+#                        )
+#                    )
+#                )
+#            )
+#        else:
+#            self.orientation = self.normalize_round45_angle(self.random.randint(0, 360))
 
+    def step(self):
+#        self.scan_environment()
+#        self.move()
+
+        # 1. Scan environment()
+        self.viewport = self.scan_environment()
+        if self.viewport is None:
+            raise RuntimeError(f"RandomWalkRobot {self.unique_id} has no viewport from scanning the environment")
+
+        # 2. Move random
+        neighborhood = self.cell.get_neighborhood(radius=1) # To make sure to move only inside grid borders
         cells_in_viewport = neighborhood.select(
             lambda cell: cell.coordinate in self.viewport
         )
-
         current_position = self.cell.coordinate
         if cells_in_viewport:
             self.cell = cells_in_viewport.select_random_cell()
+            # Calculate new orientation
             target_position = self.cell.coordinate
             self.orientation = self.normalize_round45_angle(
                 (
@@ -49,8 +81,4 @@ class RandomWalkRobot(ExplorerRobot):
             )
         else:
             self.orientation = self.normalize_round45_angle(self.random.randint(0, 360))
-
-    def step(self):
-        self.scan_environment()
-        self.move()
 

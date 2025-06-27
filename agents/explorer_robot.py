@@ -1,18 +1,59 @@
 import math
 from abc import ABC, abstractmethod
-from typing import Generator
+from typing import Generator, Optional
+
+from enum import Enum, auto
+from dataclasses import dataclass
 
 from mesa import Model
 from mesa.discrete_space import Cell, CellAgent
 
 from agents.ground import Ground
-from communication.tile_status import TileStatus #TODO: Discuss exact type (grid, dict with TileStatus, ...)
 
+#class TileStatus(Enum):
+#    FREE = auto()
+#    ROBOT = auto()
+#    OBSTACLE = auto()
+#
+#class FrontierStatus(Enum):
+#    IN_WORK = auto()
+#    OPEN = auto()
+#
+#class LocalMemory:
+#    def __init__(self):
+#        self.tile_status = {}
+#        self.frontiers = {}
+
+
+
+@dataclass
+class AgentInfo:
+    agent_id: int
+    agent_type: str
+    cell_blocking: bool
+
+@dataclass
+class CellInfo:
+    agents: list[AgentInfo]
+
+class FrontierStatus(Enum):
+    IN_WORK = auto()
+    OPEN = auto()
+
+@dataclass
+class FrontierInfo:
+    status: FrontierStatus
+    agent_id: Optional[int] = None
+
+class LocalMemory:
+    def __init__(self):
+        self.grid_info = {} # {(x,y): CellInfo}
+        self.frontier_info = {} # {(x,y): FrontierInfo}
 
 class ExplorerRobot(ABC, CellAgent):
     """
     Base class for all exploring robots.
-    Includes scan_environment-function, which implements RaycastingBresenham-logic for environment perception.
+    Includes scan_environment-function, which implements Raycasting and Bresenham-logic for environment perception.
     """
 
     def __init__(
@@ -25,6 +66,7 @@ class ExplorerRobot(ABC, CellAgent):
         orientation: int = -90,
     ):
         super().__init__(model)
+
         self.cell = cell
         self.view_radius = view_radius
         if view_angle == 360:
@@ -41,15 +83,12 @@ class ExplorerRobot(ABC, CellAgent):
 
         self.viewport: list[tuple[int, int]] = [] # Current view
 
-        # Local memory
-        # TODO: Discuss which type / form
-        self.known_tiles: dict[tuple[int, int], TileStatus] = {}
-        self.agent_positions: dict[tuple[int, int], int] = {}
+        self.local_memory = LocalMemory() # Local memory
 
 
-    @abstractmethod
-    def move(self):
-        pass
+#    @abstractmethod
+#    def move(self):
+#        pass
 
     @abstractmethod
     def step(self):
@@ -67,6 +106,7 @@ class ExplorerRobot(ABC, CellAgent):
         """
         Uses Raycasts with Bresenham's line algorithm to scan the environment in a given area.
         Scanning means transferring properties and objects from the environment to the agents local memory.
+        :Return: Current viewport as list of position-tuples.
         """
         viewport = []
 
@@ -100,12 +140,34 @@ class ExplorerRobot(ABC, CellAgent):
                     )
                 current_cell = current_cells[0]
 
+
+
+
+
+
+
+
+
+
+
+
+
                 # Scan is blocked by some agents
                 if any(
-                    getattr(agent, "view_blocking", False) is True
+                    getattr(agent, "scan_blocking", False) is True
                     for agent in current_cell.agents
                 ):
                     continue
+
+
+
+
+
+
+
+
+
+
 
                 # Add position to viewport
                 viewport.append(pos)
@@ -120,7 +182,10 @@ class ExplorerRobot(ABC, CellAgent):
                     )
                 ground_agents[0].explored = True
 
-        self.viewport = viewport
+
+
+
+
         return viewport
 
     @staticmethod
