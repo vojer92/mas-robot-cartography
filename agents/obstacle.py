@@ -8,3 +8,4 @@ class Obstacle(FixedAgent):
         self.cell = cell
         self.cell_blocking = True # Blocking of cell for moving agents
         self.view_blocking = True # Blocking of environment perception for other agents
+        self.moving = False
