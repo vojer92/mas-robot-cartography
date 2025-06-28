@@ -40,9 +40,8 @@ class RandomWalkRobot(ExplorerRobot):
         )
         current_position = self.cell.coordinate
         if cells_in_viewport:
-            self.cell = cells_in_viewport.select_random_cell()
+            target_position = cells_in_viewport.select_random_cell().coordinate
             # Calculate new orientation
-            target_position = self.cell.coordinate
             self.orientation = self.normalize_round45_angle(
                 (
                     math.degrees(
@@ -53,6 +52,8 @@ class RandomWalkRobot(ExplorerRobot):
                     )
                 )
             )
+            # Move
+            self.model.grid.move_agent(self, target_position)
         else:
             self.orientation = self.normalize_round45_angle(self.random.randint(0, 360))
 
