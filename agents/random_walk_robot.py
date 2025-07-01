@@ -31,29 +31,33 @@ class RandomWalkRobot(ExplorerRobot):
         # 1. Scan environment()
         self.viewport = self.scan_environment()
         if self.viewport is None:
-            raise RuntimeError(f"RandomWalkRobot {self.unique_id} received no viewport from scanning the environment")
+            raise RuntimeError(
+                f"RandomWalkRobot {self.unique_id} received no viewport from scanning the environment"
+            )
 
         # 2. Move random
-        neighborhood = self.cell.get_neighborhood(radius=1) # To make sure to move only inside grid borders
+        neighborhood = self.cell.get_neighborhood(
+            radius=1
+        )  # To make sure to move only inside grid borders
         cells_in_viewport = neighborhood.select(
             lambda cell: cell.coordinate in self.viewport
         )
         current_position = self.cell.coordinate
         if cells_in_viewport:
-            target_position = cells_in_viewport.select_random_cell().coordinate
+            target_cell = cells_in_viewport.select_random_cell()
+            target_position_coodrinate = target_cell.coordinate
             # Calculate new orientation
             self.orientation = self.normalize_round45_angle(
                 (
                     math.degrees(
                         math.atan2(
-                            target_position[1] - current_position[1],
-                            target_position[0] - current_position[0],
+                            target_position_coodrinate[1] - current_position[1],
+                            target_position_coodrinate[0] - current_position[0],
                         )
                     )
                 )
             )
             # Move
-            self.model.grid.move_agent(self, target_position)
+            self.cell = target_cell
         else:
             self.orientation = self.normalize_round45_angle(self.random.randint(0, 360))
-

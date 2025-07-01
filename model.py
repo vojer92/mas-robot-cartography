@@ -5,7 +5,6 @@ from mesa.datacollection import DataCollector
 from mesa.discrete_space import OrthogonalMooreGrid
 from mesa.experimental.devs import ABMSimulator
 
-from agents.blackboard import Blackboard
 from agents.explorer_robot import ExplorerRobot
 from agents.ground import Ground
 from agents.obstacle import Obstacle
@@ -63,12 +62,12 @@ class Exploration(Model):
 
         self.datacollector = DataCollector(model_reporter)
 
-        # Place (unexplored) Ground-agents in all cells
-        for cell in self.grid.cells:
-            Ground(self, cell=cell)
-
         # Place obstacles
         self._place_obstacles()
+
+        # Place (unexplored) Ground-agents in all cells
+        for cell in self.grid.all_cells:
+            Ground(self, cell=cell)
 
         # Place k robots random on free cells
         free_cells = [
@@ -76,11 +75,6 @@ class Exploration(Model):
             for cell in self.grid.all_cells
             if not any(isinstance(agent, Obstacle) for agent in cell.agents)
         ]
-
-#        # Place Ground-agents in all cells without unmobile obstacles
-#        # Needs to be reviewed and maybe changed for mobile obstacles
-#        for cell in free_cells:
-#            Ground(self, cell=cell)
 
         if self.initial_no_robots:
             robot_type.create_agents(
@@ -122,4 +116,3 @@ class Exploration(Model):
                 # Transfer list (usually 1, but also 0 or >1 possible) to coordinate of 1 cell
                 if target_cells.cells:
                     Obstacle(self, cell=target_cells.cells[0])
-

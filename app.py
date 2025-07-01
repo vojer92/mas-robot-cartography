@@ -1,6 +1,3 @@
-from agents.ground import Ground
-from agents.obstacle import Obstacle
-from agents.random_walk_robot import RandomWalkRobot
 from matplotlib.markers import MarkerStyle
 from mesa.experimental.devs import ABMSimulator
 from mesa.visualization import (
@@ -11,6 +8,9 @@ from mesa.visualization import (
     make_space_component,
 )
 
+from agents.ground import Ground
+from agents.obstacle import Obstacle
+from agents.random_walk_robot import RandomWalkRobot
 from model import Exploration
 
 # Pre-compute markers for different angles (e.g., every 5 degrees)
@@ -32,7 +32,7 @@ def exploration_portrayal(agent):
     if isinstance(agent, RandomWalkRobot):
         portrayal["color"] = "tab:red"
         portrayal["marker"] = MARKER_CACHE[round((agent.orientation + 360) % 360)]
-        portrayal["zorder"] = 2
+        portrayal["zorder"] = 4
         portrayal["size"] = 85
     elif isinstance(agent, Ground):
         if agent.explored:
@@ -46,6 +46,7 @@ def exploration_portrayal(agent):
     elif isinstance(agent, Obstacle):
         portrayal["color"] = "#000000"
         portrayal["marker"] = "s"
+        portrayal["zorder"] = 2
         portrayal["size"] = 100
 
     return portrayal
@@ -60,7 +61,7 @@ model_params = {
     "initial_no_robots": Slider("Robot Population", 1, 1, 10),
     "view_radius": Slider("View Radius", 1, 1, 5),
     "view_angle": Slider("View Angle", 90, 45, 360, 45),
-#    "view_resulution": Slider("View Resulution", 5, 10, 62),
+    #    "view_resulution": Slider("View Resulution", 5, 10, 62),
 }
 
 

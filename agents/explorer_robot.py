@@ -1,14 +1,14 @@
 import math
 from abc import ABC, abstractmethod
-from typing import Generator, Optional
-
-from enum import Enum, auto
 from dataclasses import dataclass
+from enum import Enum, auto
+from typing import Generator, Optional
 
 from mesa import Model
 from mesa.discrete_space import Cell, CellAgent
 
 from agents.ground import Ground
+
 
 @dataclass
 class AgentInfo:
@@ -17,27 +17,43 @@ class AgentInfo:
     cell_blocking: bool
     moving: bool
 
+
 @dataclass
 class CellInfo:
     agents: list[AgentInfo]
 
+
 class FrontierStatus(Enum):
     IN_WORK = auto()
     OPEN = auto()
+
 
 @dataclass
 class FrontierInfo:
     status: FrontierStatus
     agent_id: Optional[int] = None
 
+
 class LocalMemory:
-    MOORE_NEIGHBORS = [(-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1)]
+    MOORE_NEIGHBORS = [
+        (-1, 0),
+        (-1, 1),
+        (0, 1),
+        (1, 1),
+        (1, 0),
+        (1, -1),
+        (0, -1),
+        (-1, -1),
+    ]
 
     def __init__(self):
-        self.grid_info: dict[tuple[int, int], CellInfo] = {} # {(x,y): CellInfo}
-        self.frontier_info: dict[tuple[int, int], FrontierInfo] = {} # {(x,y): FrontierInfo}
+        self.grid_info: dict[tuple[int, int], CellInfo] = {}  # {(x,y): CellInfo}
+        self.frontier_info: dict[tuple[int, int], FrontierInfo] = (
+            {}
+        )  # {(x,y): FrontierInfo}
 
-    def get_known_neighbor_positions(self,
+    def get_known_neighbor_positions(
+        self,
         pos: tuple[int, int],
     ) -> list[tuple[int, int]]:
         """
@@ -47,20 +63,15 @@ class LocalMemory:
         return [
             (pos[0] + dx, pos[1] + dy)
             for dx, dy in offsets
-            if (pos[0]+dx, pos[1]+dy) in self.grid_info
+            if (pos[0] + dx, pos[1] + dy) in self.grid_info
         ]
 
-    def get_all_neighbor_positions(self,
-        pos: tuple[int, int]
-    ) -> list[tuple[int, int]]:
+    def get_all_neighbor_positions(self, pos: tuple[int, int]) -> list[tuple[int, int]]:
         """
         :Return: Returns all neighboring cell positions.
         """
         offsets = self.MOORE_NEIGHBORS
-        return [
-            (pos[0] + dx, pos[1] + dy)
-            for dx, dy in offsets
-        ]
+        return [(pos[0] + dx, pos[1] + dy) for dx, dy in offsets]
 
 
 class ExplorerRobot(ABC, CellAgent):
@@ -69,11 +80,11 @@ class ExplorerRobot(ABC, CellAgent):
     Includes scan_environment-function, which implements Raycasting and Bresenham-logic for environment perception.
     """
 
-    #NOTE:
+    # NOTE:
     # If other robot types without environment perception are introduced, a base base class with some of the properties
     # is necessary. AStar & OriginalFrontierBasedExploration & NearestBiggestFrontier has to be changed to this new base base class.
 
-    #NOTE:
+    # NOTE:
     # Although RandomWalkRobot doesn't require local memory, providing a separate scan_environment implementation
     # would lead to significant code duplication and poorer maintainability, so we intentionally avoid it.
 
@@ -103,9 +114,9 @@ class ExplorerRobot(ABC, CellAgent):
         )
         self.moving = True
 
-        self.viewport: list[tuple[int, int]] = [] # Current view
+        self.viewport: list[tuple[int, int]] = []  # Current view
 
-        self.local_memory = LocalMemory() # Local memory
+        self.local_memory = LocalMemory()  # Local memory
 
     @abstractmethod
     def step(self):
@@ -188,10 +199,10 @@ class ExplorerRobot(ABC, CellAgent):
 
                 # Scan of the subsequent cells is blocked by some agents
                 if any(
-                    getattr(agent, "scan_blocking", False) is True
+                    getattr(agent, "view_blocking", False) is True
                     for agent in current_cell.agents
                 ):
-                    continue
+                    break
 
                 # Add position to viewport (only non-blocked)
                 viewport.append(pos)
@@ -263,4 +274,3 @@ class ExplorerRobot(ABC, CellAgent):
         for i in range(n_steps + 1):
             angle = -view_angle / 2 + i * (view_angle / n_steps)
             yield angle
-
