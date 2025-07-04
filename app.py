@@ -8,6 +8,7 @@ from mesa.visualization import (
     make_space_component,
 )
 
+from agents.explorer_robot import ExplorerRobot
 from agents.ground import Ground
 from agents.obstacle import Obstacle
 from agents.random_walk_robot import RandomWalkRobot
@@ -29,7 +30,7 @@ def exploration_portrayal(agent):
         "size": 25,
     }
 
-    if isinstance(agent, RandomWalkRobot):
+    if isinstance(agent, ExplorerRobot):
         portrayal["color"] = "tab:red"
         portrayal["marker"] = MARKER_CACHE[round((agent.orientation + 360) % 360)]
         portrayal["zorder"] = 4
