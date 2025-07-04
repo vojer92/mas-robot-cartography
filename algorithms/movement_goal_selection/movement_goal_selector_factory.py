@@ -1,9 +1,15 @@
-from mesa.discrete_space import CellAgent
 from typing import Callable
+
 import numpy as np
-from algorithms.movement_goal_selection.nearest_biggest_frontier import NearestBiggestFrontier
-from algorithms.movement_goal_selection.movement_goal_selector import MovementGoalSelector
-from algorithms.movement_goal_selection.movement_goal_selector_enum import MovementGoalSelectorEnum
+from mesa.discrete_space import CellAgent
+
+from algorithms.movement_goal_selection.movement_goal_selector import \
+    MovementGoalSelector
+from algorithms.movement_goal_selection.movement_goal_selector_enum import \
+    MovementGoalSelectorEnum
+from algorithms.movement_goal_selection.nearest_biggest_frontier import \
+    NearestBiggestFrontier
+
 
 class MovementGoalSelectorFactory:
     @staticmethod
@@ -11,7 +17,7 @@ class MovementGoalSelectorFactory:
             agent: CellAgent,
             name: MovementGoalSelectorEnum,
             factor_distance: float = 1.0,
-            distance_heuristic: Callable[[tuple, tuple], float] = lambda a, b: np.linalg.norm(a - b), # Euclidean distance as default
+            distance_heuristic: Callable[[tuple, tuple], float] = lambda a, b: np.linalg.norm((a[0] - b[0], a[1] - b[1])), # Euclidean distance as default
             factor_size: float = 1.0,
             *args, **kwargs
     ) -> MovementGoalSelector:

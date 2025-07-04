@@ -109,7 +109,7 @@ class ExplorerRobot(ABC, CellAgent):
         self.orientation = orientation
 
         self.cell_blocking = True  # Blocking of cell for moving agents
-        self.scan_blocking = (
+        self.view_blocking = (
             False  # Blocking of environment perception for other agents
         )
         self.moving = True

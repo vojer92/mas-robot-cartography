@@ -3,16 +3,22 @@ import math
 from mesa import Model
 from mesa.discrete_space import Cell
 
-from agents.explorer_robot import ExplorerRobot, FrontierInfo, FrontierStatus
-
+from agents.explorer_robot import CellInfo, ExplorerRobot, FrontierInfo, FrontierStatus
+from algorithms.movement_goal_finding.movement_goal_finder_enum import (
+    MovementGoalFinderEnum,
+)
+from algorithms.movement_goal_finding.movement_goal_finder_factory import (
+    MovementGoalFinderFactory,
+)
+from algorithms.movement_goal_selection.movement_goal_selector_enum import (
+    MovementGoalSelectorEnum,
+)
+from algorithms.movement_goal_selection.movement_goal_selector_factory import (
+    MovementGoalSelectorFactory,
+)
 from algorithms.pathfinding.pathfinder_enum import PathfinderEnum
 from algorithms.pathfinding.pathfinder_factory import PathfinderFactory
-
-from algorithms.movement_goal_finding.movement_goal_finder_enum import MovementGoalFinderEnum
-from algorithms.movement_goal_finding.movement_goal_finder_factory import MovementGoalFinderFactory
-
-from algorithms.movement_goal_selection.movement_goal_selector_enum import MovementGoalSelectorEnum
-from algorithms.movement_goal_selection.movement_goal_selector_factory import MovementGoalSelectorFactory
+from communication.pubSubBroker import PubSubBroker
 
 
 class FBERobot(ExplorerRobot):
@@ -21,117 +27,123 @@ class FBERobot(ExplorerRobot):
     """
 
     def __init__(
-            self,
-            model: Model,
-            cell: Cell,
-            view_radius: int = 1,
-            view_angle: int = 90,
-            view_resolution: int = 5,
-            orientation: int = -90,
+        self,
+        model: Model,
+        cell: Cell,
+        pubSubBroker: PubSubBroker,
+        view_radius: int = 1,
+        view_angle: int = 90,
+        view_resolution: int = 5,
+        orientation: int = -90,
     ):
-        super().__init__(model,
-            cell,
-            view_radius,
-            view_angle,
-            view_resolution,
-            orientation
+        super().__init__(
+            model, cell, view_radius, view_angle, view_resolution, orientation
+        )
+        self.pubSubBroker = pubSubBroker
+        self.pubSubBroker.subscribe(
+            "new_grid_info", self._new_gird_info_callback, self.unique_id
+        )
+        self.pubSubBroker.subscribe(
+            "new_frontier_into", self._new_frontier_info_callback, self.unique_id
         )
         self.pathfinder = PathfinderFactory.give_pathfinder(self, PathfinderEnum.ASTAR)
-        self.goal_finder = MovementGoalFinderFactory.give_movement_goal_finder(self, MovementGoalFinderEnum.ORIGINAL_FBE)
-        self.goal_selector = MovementGoalSelectorFactory.give_movement_goal_selector(self, MovementGoalSelectorEnum.NEAREST_BIGGEST_FRONTIER)
+        self.goal_finder = MovementGoalFinderFactory.give_movement_goal_finder(
+            self, MovementGoalFinderEnum.ORIGINAL_FBE
+        )
+        self.goal_selector = MovementGoalSelectorFactory.give_movement_goal_selector(
+            self, MovementGoalSelectorEnum.NEAREST_BIGGEST_FRONTIER
+        )
         self.goal = None
         self.path = None
         self.path_index = 0
         self.blocked_counter = 0
-        self.blocked_counter_max = 1 # Number of rounds the agent waits when its route is blocked
+        self.blocked_counter_max = (
+            1  # Number of rounds the agent waits when its route is blocked
+        )
 
-     def step(self):
-        #Environment perception
+    def step(self):
+        # Environment perception
         self.viewport = self.scan_environment()
 
+        # Broadcast new environment information to all robots
+        # for position in self.viewport:
+        #     self.pubSubBroker.publish("new_grid_info", self.local_memory.grid_info, self.unique_id)
+        #     #TODO:
+        #     # Communication needs to be implemented!
+        self.pubSubBroker.publish(
+            "new_grid_info", self.local_memory.grid_info, self.unique_id
+        )
 
-        #Broadcast new environment information to all robots
-        for position in self.viewport:
-            ....local_memory[position] = self.local_memory[position]
-            #TODO:
-            # Communication needs to be implemented!
-
-
-        #Pulling new environment information is unnecessary due broadcast
-
-
-        #Determine Frontiers
+        # Determine Frontiers
         current_frontiers = set(self.goal_finder.find_goals())
         memory_frontiers = set(self.local_memory.frontier_info.keys())
-        #Remove outdated Frontiers
+        # Remove outdated Frontiers
         to_remove = memory_frontiers - current_frontiers
         for pos in to_remove:
             del self.local_memory.frontier_info[pos]
-        #Add new Frontiers
+        # Add new Frontiers
         to_add = current_frontiers - memory_frontiers
         for pos in to_add:
             self.local_memory.frontier_info[pos] = FrontierInfo(
-                status=FrontierStatus.OPEN,
-                agent_id = None
+                status=FrontierStatus.OPEN, agent_id=None
             )
 
-
-        #Check if current goal is still relevant. If not select new goal.
+        # Check if current goal is still relevant. If not select new goal.
         new_goal = None
-        if (
-            self.goal is None or
-            self.goal not in self.local_memory.frontier_info.keys()
-        ):
-            new_goal = self.goal_selector.select_goal()
+        if self.goal is None or self.goal not in self.local_memory.frontier_info.keys():
+            new_goal = self.goal_selector.select_goal(
+                self.local_memory.frontier_info.keys()
+            )
             self.goal = new_goal
             self.path = None
 
+        # Broadcast new frontier information to all robots
+        # for frontier in to_remove:
+        #     ....local_memory.frontier_info.pop(frontier)
+        #     #TODO:
+        #     # Communication needs to be implemented!
+        # for frontier in to_add:
+        #     ....local_memory.frontier_info[frontier] = FrontierInfo(
+        #         status=FrontierStatus.OPEN,
+        #         agent_id = None
+        #     )
+        #     #TODO:
+        #     # Communication needs to be implemented!
+        # if new_goal:
+        #     ....local_memory.fronter_info[new_goal].agent_id = self.unique_id
+        #     #TODO:
+        #     # Communication needs to be implemented!
+        self.pubSubBroker.publish(
+            "new_frontier_info", self.local_memory.frontier_info, self.unique_id
+        )
 
-        #Broadcast new frontier information to all robots
-        for frontier in to_remove:
-            ....local_memory.frontier_info.pop(frontier)
-            #TODO:
-            # Communication needs to be implemented!
-        for frontier in to_add:
-            ....local_memory.frontier_info[frontier] = FrontierInfo(
-                status=FrontierStatus.OPEN,
-                agent_id = None
-            )
-            #TODO:
-            # Communication needs to be implemented!
-        if new_goal:
-            ....local_memory.fronter_info[new_goal].agent_id = self.unique_id
-            #TODO:
-            # Communication needs to be implemented!
-
-        #Calculate path to goal
+        # Calculate path to goal
         if self.path is None:
             self.path = self.pathfinder.find_path(self.goal)
             self.path_index = 0
-        if self.path is None: #Fallback if no path was found
+        if self.path is None:  # Fallback if no path was found
             ...
-        #TODO:
+        # TODO:
         # If there is no connection of already explored free cells from agent position to goal position, it is unable to
         # calculate a path towards it!
         # Kind of like alternative strategy is necessary... but i have no idea which one... evtl. random movement...
 
-        #Get next position on path
+        # Get next position on path
         current_pos = self.cell.coordinate
-        if self.path_index < len(self.path) - 1:
-            self.path_index += 1
+        next_pos = current_pos
+        if self.path_index <= len(self.path) - 1:
             next_pos = self.path[self.path_index]
-        else:
-            #TODO: Possible???
+            self.path_index += 1
+        # else:
+        # TODO: Possible???
 
-        #Current Position Check, Collision-Check and movement
+        # Current Position Check, Collision-Check and movement
         if current_pos == next_pos:
             self.orientation += self.view_angle
-            #TODO:
+            # TODO:
             # Improvement: Turning directly towards unknown neighbor cells!
-
-
         elif next_pos not in self.local_memory.grid_info.keys():
-            #Unknown -> don't move there, but look in this direction
+            # Unknown -> don't move there, but look in this direction
             self.orientation = self.normalize_round45_angle(
                 (
                     math.degrees(
@@ -143,14 +155,22 @@ class FBERobot(ExplorerRobot):
                 )
             )
             self.blocked_counter = 0
-        elif any(agent.cell_blocking for agent in self.local_memory.grid_info[next_pos].agents):
-            #Blocked -> Wait till blocked_counter_max is reached, then resets path for recalculation in next step
+        elif any(
+            agent.cell_blocking
+            for agent in self.local_memory.grid_info[next_pos].agents
+        ):
+            # Blocked -> Wait till blocked_counter_max is reached, then resets path for recalculation in next step
             self.blocked_counter += 1
             if self.blocked_counter >= self.blocked_counter_max:
                 self.path = None
         else:
-            #Free -> move there
-            self.model.grid.move_agent(self, next_pos)
+            # Free -> move there
+            next_cell = [
+                cell
+                for cell in self.model.grid.all_cells
+                if cell.coordinate == next_pos
+            ]
+            self.cell = next_cell[0]
             self.orientation = self.normalize_round45_angle(
                 (
                     math.degrees(
@@ -163,6 +183,11 @@ class FBERobot(ExplorerRobot):
             )
             self.blocked_counter = 0
 
+    def _new_gird_info_callback(self, data: dict[tuple[int, int], CellInfo]):
+        self.local_memory.grid_info = data
 
-    #TODO:
+    def _new_frontier_info_callback(self, data: dict[tuple[int, int], FrontierInfo]):
+        self.local_memory.frontier_info = data
+
+    # TODO:
     # Receiving the broadcasted information needs to be implemented!

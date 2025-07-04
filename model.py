@@ -1,14 +1,16 @@
 import math
 
-from mesa import Agent, Model
+from mesa import Model
 from mesa.datacollection import DataCollector
 from mesa.discrete_space import OrthogonalMooreGrid
 from mesa.experimental.devs import ABMSimulator
 
 from agents.explorer_robot import ExplorerRobot
+from agents.fbe_robot import FBERobot
 from agents.ground import Ground
 from agents.obstacle import Obstacle
 from agents.random_walk_robot import RandomWalkRobot
+from communication.pubSubBroker import PubSubBroker
 
 OBSTACLES = [
     [(-2, 0), (-1, 0), (0, 0)],
@@ -29,7 +31,7 @@ class Exploration(Model):
         view_angle=90,
         view_resolution=5,
         initial_no_robots=1,
-        robot_type: ExplorerRobot = RandomWalkRobot,
+        robot_type: ExplorerRobot = FBERobot,
         seed=None,
         simulator: ABMSimulator = ABMSimulator(),
     ):
@@ -49,6 +51,8 @@ class Exploration(Model):
             capacity=math.inf,
             random=self.random,
         )
+
+        self.pubSubBroker = PubSubBroker()
 
         model_reporter = {
             "Explored": lambda m: len(
@@ -80,6 +84,7 @@ class Exploration(Model):
             robot_type.create_agents(
                 self,
                 self.initial_no_robots,
+                pubSubBroker=self.pubSubBroker,
                 cell=self.random.sample(free_cells, k=self.initial_no_robots),
                 # Sample instead of choice to avoid duplicates
                 # k have to be >= ground_cells.len! If not sample throws error.
@@ -101,18 +106,30 @@ class Exploration(Model):
         self.datacollector.collect(self)
 
     def _place_obstacles(self):
-        for obstacle in OBSTACLES:
-            random_cell = self.grid.select_random_empty_cell()
-            neighborhood = random_cell.get_neighborhood(
-                len(obstacle), include_center=True
+        free_cells = [
+            cell
+            for cell in self.grid.all_cells
+            if not any(
+                isinstance(agent, Obstacle) or not isinstance(agent, ExplorerRobot)
+                for agent in cell.agents
             )
-            for coordinate in obstacle:
-                target_cells = neighborhood.select(
-                    lambda cell: cell.coordinate
-                    == tuple(
-                        abs(a + b) for a, b in zip(random_cell.coordinate, coordinate)
-                    )
-                )
-                # Transfer list (usually 1, but also 0 or >1 possible) to coordinate of 1 cell
-                if target_cells.cells:
-                    Obstacle(self, cell=target_cells.cells[0])
+        ]
+
+        num = 70
+
+        Obstacle.create_agents(self, num, cell=self.random.sample(free_cells, k=num))
+        # for obstacle in OBSTACLES:
+        #     random_cell = self.grid.select_random_empty_cell()
+        #     neighborhood = random_cell.get_neighborhood(
+        #         len(obstacle), include_center=True
+        #     )
+        #     for coordinate in obstacle:
+        #         target_cells = neighborhood.select(
+        #             lambda cell: cell.coordinate
+        #             == tuple(
+        #                 abs(a + b) for a, b in zip(random_cell.coordinate, coordinate)
+        #             )
+        #         )
+        #         # Transfer list (usually 1, but also 0 or >1 possible) to coordinate of 1 cell
+        #         if target_cells.cells:
+        #             Obstacle(self, cell=target_cells.cells[0])
