@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 from mesa import Model
 from mesa.datacollection import DataCollector
@@ -11,15 +12,18 @@ from agents.ground import Ground
 from agents.obstacle import Obstacle
 from agents.random_walk_robot import RandomWalkRobot
 from communication.pubSubBroker import PubSubBroker
+from algorithms.reachability_analysis import load_no_unreachable
+from algorithms.reachability_analysis import flood_fill
+from algorithms.reachability_analysis import save_no_unreachable
 
-OBSTACLES = [
-    [(-2, 0), (-1, 0), (0, 0)],
-    [(-3, 0), (-2, 0), (-1, 0), (0, 0)],
-    [(-4, 0), (-3, 0), (-2, 0), (-1, 0), (0, 0)],
-    [(0, -2), (0, -1), (0, 0)],
-    [(0, -3), (0, -2), (0, -1), (0, 0)],
-    [(0, -4), (0, -3), (0, -2), (0, -1), (0, 0)],
-]
+#OBSTACLES = [
+#    [(-2, 0), (-1, 0), (0, 0)],
+#    [(-3, 0), (-2, 0), (-1, 0), (0, 0)],
+#    [(-4, 0), (-3, 0), (-2, 0), (-1, 0), (0, 0)],
+#    [(0, -2), (0, -1), (0, 0)],
+#    [(0, -3), (0, -2), (0, -1), (0, 0)],
+#    [(0, -4), (0, -3), (0, -2), (0, -1), (0, 0)],
+#]
 
 
 class Exploration(Model):
@@ -37,12 +41,14 @@ class Exploration(Model):
         simulator: ABMSimulator = ABMSimulator(),
     ):
         super().__init__(seed=seed)
+        self.seed = seed
         self.simulator = simulator
         self.simulator.setup(self)
 
         self.height = height
         self.width = width
         self.obstacle_density = obstacle_density
+        self.no_robots = None
 
         self.initial_no_robots = initial_no_robots
         self.robot_type = robot_type
@@ -64,7 +70,9 @@ class Exploration(Model):
                     if isinstance(agent, Ground) and agent.explored
                 ]
             )
+            # TODO: Add all metrics, e.g. exploration_progress
         }
+
 
         self.datacollector = DataCollector(model_reporter)
 
@@ -97,6 +105,47 @@ class Exploration(Model):
                 ),
                 view_resolution=view_resolution,
             )
+
+
+        # Determine unreachable positions
+        # Check if already calculated
+        no_unreachable = load_no_unreachable(
+            seed = self.seed,
+            grid_width=self.width,
+            grid_height=self.height,
+            no_agents=self.initial_no_robots,
+        )
+        if no_unreachable is None:
+            # Determine all agent positions as start positions for flood-fill
+            agent_positions = [
+                (agent.cell.coordinate[0], agent.cell.coordinate[1])
+                for agent in self.agents_by_type[robot_type]
+            ]
+            # Create obstacle grid as base structure for flood-fill
+            obstacle_grid = np.zeros((self.height, self.width), dtype=int)
+            for y in range(self.height):
+                for x in range(self.width):
+                    cell = self.grid[x, y] # mesa: at first x (width), then y (height)
+                    if any(isinstance(agent,Obstacle) for agent in cell.agents):
+                        obstacle_grid[y,x] = 1 # NumPy: at first y (height), then x (width)
+            # Create reachability-mask for all robot-start-positions and unite all reachable positions
+            reachable = np.zeros_like(obstacle_grid, dtype=bool)
+            for pos in agent_positions:
+                reachable |= flood_fill(obstacle_grid, pos) #In-place bitwise or-operation
+            # Calculate number of unreachable positions
+            no_unreachable = np.size(reachable) - np.count_nonzero(reachable)
+            # NOTE: Optional save mask of unreachable positions for highlighting them in visualization
+            # Save no_unreachable
+            save_no_unreachable(
+                no_unreachable=no_unreachable,
+                seed=self.seed,
+                grid_width=self.width,
+                grid_height=self.height,
+                no_agents=self.initial_no_robots,
+            )
+
+        self.no_unreachable = no_unreachable
+
 
         self.running = True
         self.datacollector.collect(self)

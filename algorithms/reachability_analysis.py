@@ -43,40 +43,82 @@ def flood_fill(
 
     return reachable
 
-def _mask_filename(
+
+
+def _mask_unreachable_filename(
     seed: int,
     grid_width: int,
     grid_height: int,
+    no_agents: int,
     directory: str
 ) -> str:
     """
     Creates the filename (incl. path) for the mask of a given seed-grid-combination.
     """
     os.makedirs(directory, exist_ok=True) #Check for repository, create if not already existing
-    return f"{directory}/mask_seed{seed}_size{grid_width}x{grid_height}.npy"
+    return f"{directory}/mask_seed{seed}_size{grid_width}x{grid_height}_no_agents{no_agents}.npy"
 
-def save_mask(
+def save_unreachable_mask(
     mask: np.ndarray,
     seed: int,
     grid_width: int,
     grid_height: int,
+    no_agents: int,
     directory: str = "masks"
 ) -> None:
     """
     Saves the given mask as .npy file in the given directory
     """
-    np.save(_mask_filename(seed, grid_width, grid_height, directory), mask)
+    np.save(_mask_unreachable_filename(seed, grid_width, grid_height, no_agents, directory), mask)
 
-def load_mask(
+def load_unreachable_mask(
     seed: int,
     grid_width: int,
     grid_height: int,
+    no_agents: int,
     directory: str = "masks"
 ) -> np.ndarray | None:
     """
     Loads a saved mask from .npy file in the given directory"
     """
-    filename = _mask_filename(seed, grid_width, grid_height, directory)
+    filename = _mask_unreachable_filename(seed, grid_width, grid_height, no_agents, directory)
     if os.path.exists(filename):
         return np.load(filename)
+    return None
+
+
+
+def _no_unreachable_filename(
+        seed: int,
+        grid_width: int,
+        grid_height: int,
+        no_agents: int,
+        directory: str
+) -> str:
+    os.makedirs(directory, exist_ok=True) #Check for repository, create if not already existing
+    return f"{directory}/no_unreachable_seed{seed}_size{grid_width}x{grid_height}_no_agents{no_agents}.txt"
+
+def save_no_unreachable(
+    no_unreachable: int,
+    seed: int,
+    grid_width: int,
+    grid_height: int,
+    no_agents: int,
+    directory: str = "masks"
+) -> None:
+    filename = _no_unreachable_filename(seed, grid_width, grid_height, no_agents, directory)
+    with open(filename, "w") as f:
+        f.write(str(no_unreachable))
+
+def load_no_unreachable(
+    seed: int,
+    grid_width: int,
+    grid_height: int,
+    no_agents: int,
+    directory: str = "masks"
+) -> int | None:
+    filename = _no_unreachable_filename(seed, grid_width, grid_height, no_agents, directory)
+    if os.path.exists(filename):
+        with open(filename, "r") as f:
+            return int(f.read())
     return None
