@@ -34,21 +34,21 @@ def exploration_portrayal(agent):
         portrayal["color"] = "tab:red"
         portrayal["marker"] = MARKER_CACHE[round((agent.orientation + 360) % 360)]
         portrayal["zorder"] = 4
-        portrayal["size"] = 85
+        portrayal["size"] = 180
     elif isinstance(agent, Ground):
         if agent.explored:
             portrayal["color"] = "tab:green"
             portrayal["marker"] = "s"
-            portrayal["size"] = 85
+            portrayal["size"] = 180
         else:
             portrayal["color"] = "#DDDDDD"
             portrayal["marker"] = "s"
-            portrayal["size"] = 85
+            portrayal["size"] = 180
     elif isinstance(agent, Obstacle):
         portrayal["color"] = "#000000"
         portrayal["marker"] = "s"
         portrayal["zorder"] = 2
-        portrayal["size"] = 100
+        portrayal["size"] = 180
 
     return portrayal
 
@@ -70,10 +70,14 @@ def post_process_space(ax):
     ax.set_aspect("equal")
     ax.set_xticks([])
     ax.set_yticks([])
+    ax.get_figure().set_size_inches(8, 8)
 
 
 def post_process_lines(ax):
+    ax.set_title("Fortschritt der Erkundung")
+    ax.set_ylabel("Anzahl Erkundeter Felder")
     ax.legend(loc="center left", bbox_to_anchor=(1, 0.9))
+    ax.grid(True, linestyle='--', alpha=0.6)
 
 
 space_component = make_space_component(
