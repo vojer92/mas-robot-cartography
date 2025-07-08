@@ -27,6 +27,7 @@ class Exploration(Model):
         self,
         width=20,
         height=20,
+        obstacle_density=0.3,
         view_radius=1,
         view_angle=90,
         view_resolution=5,
@@ -41,6 +42,7 @@ class Exploration(Model):
 
         self.height = height
         self.width = width
+        self.obstacle_density = obstacle_density
 
         self.initial_no_robots = initial_no_robots
         self.robot_type = robot_type
@@ -115,7 +117,7 @@ class Exploration(Model):
             )
         ]
 
-        num = 70
+        num = int((self.width * self.height) * self.obstacle_density)
 
         Obstacle.create_agents(self, num, cell=self.random.sample(free_cells, k=num))
         # for obstacle in OBSTACLES:
