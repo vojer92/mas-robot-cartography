@@ -193,7 +193,6 @@ class FBERobot(ExplorerRobot):
 
                     if self.blocked_counter >= self.blocked_counter_max:
                         self.path = None  # Reset path for recalculation in next step
-                        # TODO: Evtl. auch goal resetten, damit ein neues gewählt wird, aber das müsste kommuniziert werden...
                         self.blocked_counter = 0
                 else:
                     # Not blocked -> Move agent to next position on path
@@ -271,9 +270,7 @@ class FBERobot(ExplorerRobot):
                         )
                     )
                 )
-            # and throw goal for recalculation in next step
-            # TODO: Sinnvoll?
-#            self.goal = None
+
 
 
 
