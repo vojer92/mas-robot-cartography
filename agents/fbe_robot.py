@@ -3,7 +3,7 @@ import math
 from mesa import Model
 from mesa.discrete_space import Cell
 
-from agents.explorer_robot import CellInfo, ExplorerRobot, FrontierInfo, FrontierStatus
+from agents.explorer_robot import CellInfo, AgentInfo, FrontierInfo, FrontierStatus, ExplorerRobot
 from algorithms.movement_goal_finding.movement_goal_finder_enum import (
     MovementGoalFinderEnum,
 )
@@ -19,6 +19,13 @@ from algorithms.movement_goal_selection.movement_goal_selector_factory import (
 from algorithms.pathfinding.pathfinder_enum import PathfinderEnum
 from algorithms.pathfinding.pathfinder_factory import PathfinderFactory
 from communication.pubSubBroker import PubSubBroker
+
+
+
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 
 class FBERobot(ExplorerRobot):
@@ -62,14 +69,17 @@ class FBERobot(ExplorerRobot):
         )
 
     def step(self):
+
+
+
+        logger.info(
+            f"[{self.unique_id}] STEP BEGIN: pos={self.cell.coordinate}, goal={self.goal}, path={self.path}, path_index={self.path_index}, blocked_counter={self.blocked_counter}"
+        )
+
+
+
         # Environment perception
         self.viewport = self.scan_environment()
-
-        # Broadcast new environment information to all robots
-        # for position in self.viewport:
-        #     self.pubSubBroker.publish("new_grid_info", self.local_memory.grid_info, self.unique_id)
-        #     #TODO:
-        #     # Communication needs to be implemented!
         self.pubSubBroker.publish(
             "new_grid_info", self.local_memory.grid_info, self.unique_id
         )
@@ -94,100 +104,185 @@ class FBERobot(ExplorerRobot):
             new_goal = self.goal_selector.select_goal(
                 self.local_memory.frontier_info.keys()
             )
-            self.goal = new_goal
-            self.path = None
+            # Check if new goal was selected. If all Frontiers are explored, no new goal is left.
+            if new_goal is not None:
+                self.goal = new_goal
+                self.local_memory.frontier_info[self.goal].status = FrontierStatus.IN_WORK
+                self.local_memory.frontier_info[self.goal].agent_id = self.unique_id
+                self.path = None
 
-        # Broadcast new frontier information to all robots
-        # for frontier in to_remove:
-        #     ....local_memory.frontier_info.pop(frontier)
-        #     #TODO:
-        #     # Communication needs to be implemented!
-        # for frontier in to_add:
-        #     ....local_memory.frontier_info[frontier] = FrontierInfo(
-        #         status=FrontierStatus.OPEN,
-        #         agent_id = None
-        #     )
-        #     #TODO:
-        #     # Communication needs to be implemented!
-        # if new_goal:
-        #     ....local_memory.fronter_info[new_goal].agent_id = self.unique_id
-        #     #TODO:
-        #     # Communication needs to be implemented!
+
+
+                logger.info(f"[{self.unique_id}] New goal selected: {self.goal}")
+                logger.info(f"A*: Trying to find path from {self.cell.coordinate} to {self.goal}")
+                logger.info(f"[{self.unique_id}] Grid info: {self.local_memory.grid_info}")
+            else:
+                logger.info(f"[{self.unique_id}] No goal available (all frontiers explored?)")
+
+
+
+        # Broadcast new frontier and goal selection information to all robots
         self.pubSubBroker.publish(
             "new_frontier_info", self.local_memory.frontier_info, self.unique_id
         )
 
         # Calculate path to goal
-        if self.path is None:
+        if self.path is None and self.goal is not None:
             self.path = self.pathfinder.find_path(self.goal)
             self.path_index = 0
-        if self.path is None:  # Fallback if no path was found
-            ...
-        # TODO:
-        # If there is no connection of already explored free cells from agent position to goal position, it is unable to
-        # calculate a path towards it!
-        # Kind of like alternative strategy is necessary... but i have no idea which one... evtl. random movement...
 
-        # Get next position on path
+
+
+            logger.info(f"[{self.unique_id}] Path calculated: {self.path}")
+
+
+
+        if self.path is None and self.goal is not None:
+            # No path to goal could be calculated!
+            # Reset goal for new selection and calculation in next step
+
+
+
+            logger.info(f"[{self.unique_id}] No path found for goal {self.goal}, resetting goal.")
+
+
+
+            self.local_memory.frontier_info[self.goal].status = FrontierStatus.OPEN
+            self.local_memory.frontier_info[self.goal].agent_id = None
+            self.goal = None
+            self.pubSubBroker.publish(
+                "new_frontier_info", self.local_memory.frontier_info, self.unique_id
+            )
+
+        # Move along path
         current_pos = self.cell.coordinate
-        next_pos = current_pos
-        if self.path_index <= len(self.path) - 1:
-            next_pos = self.path[self.path_index]
-            self.path_index += 1
-        # else:
-        # TODO: Possible???
+        moved = False
 
-        # Current Position Check, Collision-Check and movement
-        if current_pos == next_pos:
-            self.orientation += self.view_angle
-            # TODO:
-            # Improvement: Turning directly towards unknown neighbor cells!
-        elif next_pos not in self.local_memory.grid_info.keys():
-            # Unknown -> don't move there, but look in this direction
-            self.orientation = self.normalize_round45_angle(
-                (
-                    math.degrees(
-                        math.atan2(
-                            next_pos[1] - current_pos[1],
-                            next_pos[0] - current_pos[0],
+        if self.path is not None:
+
+
+
+            logger.info(
+                f"[{self.unique_id}] Moving along path: path_index={self.path_index}, current_pos={current_pos}"
+            )
+
+
+
+            # If path points on current_pos (usually at the beginning of the path) -> continue with next position
+            while self.path_index < len(self.path) and self.path[self.path_index] == current_pos:
+                self.path_index += 1
+
+            if self.path_index < len(self.path):
+                # Get next (new) position on path
+                next_pos = self.path[self.path_index]
+                # Check if next_pos is blocked
+                if any(
+                        agent.cell_blocking
+                        for agent in self.local_memory.grid_info[next_pos].agents
+                ):
+                    # Blocked -> Wait till blocked_counter_max is reached, then resets path for recalculation in next step
+                    self.blocked_counter += 1
+
+
+
+                    logger.info(
+                        f"[{self.unique_id}] Next pos {next_pos} is blocked. blocked_counter={self.blocked_counter}"
+                    )
+
+
+
+                    if self.blocked_counter >= self.blocked_counter_max:
+                        self.path = None  # Reset path for recalculation in next step
+                        # TODO: Evtl. auch goal resetten, damit ein neues gewählt wird, aber das müsste kommuniziert werden...
+                        self.blocked_counter = 0
+                else:
+                    # Not blocked -> Move agent to next position on path
+
+
+
+                    logger.info(f"[{self.unique_id}] Moving to {next_pos}")
+
+
+
+                    next_cell = [
+                        cell for cell in self.model.grid.all_cells
+                        if cell.coordinate == next_pos
+                    ][0]
+                    self.local_memory.grid_info[current_pos].agents = [
+                        agent for agent in self.local_memory.grid_info[current_pos].agents
+                        if agent.unique_id != self.unique_id
+                    ]
+                    self.orientation = self.normalize_round45_angle(
+                        math.degrees(
+                            math.atan2(
+                                next_pos[1] - current_pos[1],
+                                next_pos[0] - current_pos[0],
+                            )
                         )
                     )
-                )
-            )
-            self.blocked_counter = 0
-        elif any(
-            agent.cell_blocking
-            for agent in self.local_memory.grid_info[next_pos].agents
-        ):
-            # Blocked -> Wait till blocked_counter_max is reached, then resets path for recalculation in next step
-            self.blocked_counter += 1
-            if self.blocked_counter >= self.blocked_counter_max:
-                self.path = None
-        else:
-            # Free -> move there
-            next_cell = [
-                cell
-                for cell in self.model.grid.all_cells
-                if cell.coordinate == next_pos
+                    self.cell = next_cell
+                    self.local_memory.grid_info[next_pos].agents.append(
+                        AgentInfo(
+                            unique_id=self.unique_id,
+                            agent_type=type(self).__name__,
+                            cell_blocking=self.cell_blocking,
+                            moving=self.moving
+                        )
+                    )
+                    self.blocked_counter = 0
+                    self.path_index += 1
+                    moved = True
+
+        # Check if end of the path is reached
+        if self.path is not None and self.path_index == len(self.path):
+
+
+
+            logger.info(f"[{self.unique_id}] End of path reached. Resetting path and goal.")
+
+
+
+            self.path = None
+            self.goal = None
+
+        # If no movement was possible
+        if not moved:
+
+
+
+            logger.info(f"[{self.unique_id}] No movement. Looking for unexplored neighbors.")
+
+
+
+            unexplored_neighbors = [
+                pos for pos in self.local_memory.get_all_neighbor_positions(current_pos)
+                if pos not in self.local_memory.grid_info
             ]
-            self.cell = next_cell[0]
-            self.orientation = self.normalize_round45_angle(
-                (
-                    math.degrees(
-                        math.atan2(
-                            next_pos[1] - current_pos[1],
-                            next_pos[0] - current_pos[0],
+            if unexplored_neighbors:
+                # Look towards unexplored neighbors
+                target_pos = unexplored_neighbors[0]
+                self.orientation = self.normalize_round45_angle(
+                    (
+                        math.degrees(
+                            math.atan2(
+                                target_pos[1] - current_pos[1],
+                                target_pos[0] - current_pos[0],
+                            )
                         )
                     )
                 )
-            )
-            self.blocked_counter = 0
+            # and throw goal for recalculation in next step
+            # TODO: Sinnvoll?
+#            self.goal = None
+
+
+
+        logger.info(f"[{self.unique_id}] Frontier info: {self.local_memory.frontier_info}")
+
+
 
     def _new_gird_info_callback(self, data: dict[tuple[int, int], CellInfo]):
         self.local_memory.grid_info = data
 
     def _new_frontier_info_callback(self, data: dict[tuple[int, int], FrontierInfo]):
         self.local_memory.frontier_info = data
-
-    # TODO:
-    # Receiving the broadcasted information needs to be implemented!
