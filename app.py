@@ -46,7 +46,8 @@ def exploration_portrayal(agent):
             portrayal["size"] = 180
     elif isinstance(agent, Obstacle):
         portrayal["color"] = "#000000"
-        portrayal["marker"] = "s"
+#        portrayal["marker"] = "s" #Quadratic obstacles to match the form of the Ground-agents
+        portrayal["marker"] = "o" #Round obstacles for better visualization of Moore-movements
         portrayal["zorder"] = 2
         portrayal["size"] = 180
 

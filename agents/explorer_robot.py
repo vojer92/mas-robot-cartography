@@ -46,11 +46,16 @@ class LocalMemory:
         (-1, -1),
     ]
 
-    def __init__(self):
+    def __init__(self,
+        environment_grid_width: int, # Necessary for environment_grid-border-checks
+        environment_grid_height: int, # Necessary for environment_grid-border-checks
+    ):
         self.grid_info: dict[tuple[int, int], CellInfo] = {}  # {(x,y): CellInfo}
         self.frontier_info: dict[tuple[int, int], FrontierInfo] = (
             {}
         )  # {(x,y): FrontierInfo}
+        self.environment_grid_width = environment_grid_width
+        self.environment_grid_height = environment_grid_height
 
     def get_known_neighbor_positions(
         self,
@@ -71,7 +76,13 @@ class LocalMemory:
         :Return: Returns all neighboring cell positions.
         """
         offsets = self.MOORE_NEIGHBORS
-        return [(pos[0] + dx, pos[1] + dy) for dx, dy in offsets]
+        neighbor_positions = []
+        for dx, dy in offsets:
+            nx, ny = pos[0] + dx, pos[1] + dy
+            # Check for environment_grid-borders
+            if 0 <= nx < self.environment_grid_width and 0 <= ny < self.environment_grid_height:
+                neighbor_positions.append((nx, ny))
+        return neighbor_positions
 
 
 class ExplorerRobot(ABC, CellAgent):
@@ -116,7 +127,7 @@ class ExplorerRobot(ABC, CellAgent):
 
         self.viewport: list[tuple[int, int]] = []  # Current view
 
-        self.local_memory = LocalMemory()  # Local memory
+        self.local_memory = LocalMemory(self.model.width, self.model.height)  # Local memory
 
     @abstractmethod
     def step(self):
