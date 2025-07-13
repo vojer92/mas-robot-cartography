@@ -1,9 +1,16 @@
+import logging
 import math
 
 from mesa import Model
 from mesa.discrete_space import Cell
 
-from agents.explorer_robot import CellInfo, AgentInfo, FrontierInfo, FrontierStatus, ExplorerRobot
+from agents.explorer_robot import (
+    AgentInfo,
+    CellInfo,
+    ExplorerRobot,
+    FrontierInfo,
+    FrontierStatus,
+)
 from algorithms.movement_goal_finding.movement_goal_finder_enum import (
     MovementGoalFinderEnum,
 )
@@ -20,12 +27,8 @@ from algorithms.pathfinding.pathfinder_enum import PathfinderEnum
 from algorithms.pathfinding.pathfinder_factory import PathfinderFactory
 from communication.pubSubBroker import PubSubBroker
 
-
-
-import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 
 
 class FBERobot(ExplorerRobot):
@@ -70,14 +73,6 @@ class FBERobot(ExplorerRobot):
 
     def step(self):
 
-
-
-        logger.info(
-            f"[{self.unique_id}] STEP BEGIN: pos={self.cell.coordinate}, goal={self.goal}, path={self.path}, path_index={self.path_index}, blocked_counter={self.blocked_counter}"
-        )
-
-
-
         # Environment perception
         self.viewport = self.scan_environment()
         self.pubSubBroker.publish(
@@ -107,19 +102,16 @@ class FBERobot(ExplorerRobot):
             # Check if new goal was selected. If all Frontiers are explored, no new goal is left.
             if new_goal is not None:
                 self.goal = new_goal
-                self.local_memory.frontier_info[self.goal].status = FrontierStatus.IN_WORK
+                self.local_memory.frontier_info[self.goal].status = (
+                    FrontierStatus.IN_WORK
+                )
                 self.local_memory.frontier_info[self.goal].agent_id = self.unique_id
                 self.path = None
 
-
-
-                logger.info(f"[{self.unique_id}] New goal selected: {self.goal}")
-                logger.info(f"A*: Trying to find path from {self.cell.coordinate} to {self.goal}")
-                logger.info(f"[{self.unique_id}] Grid info: {self.local_memory.grid_info}")
             else:
-                logger.info(f"[{self.unique_id}] No goal available (all frontiers explored?)")
-
-
+                logger.info(
+                    f"[{self.unique_id}] No goal available (all frontiers explored?)"
+                )
 
         # Broadcast new frontier and goal selection information to all robots
         self.pubSubBroker.publish(
@@ -129,23 +121,12 @@ class FBERobot(ExplorerRobot):
         # Calculate path to goal
         if self.path is None and self.goal is not None:
             self.path = self.pathfinder.find_path(self.goal)
+            logger.info(f"{self.path} ======= {self.goal}")
             self.path_index = 0
-
-
-
-            logger.info(f"[{self.unique_id}] Path calculated: {self.path}")
-
-
 
         if self.path is None and self.goal is not None:
             # No path to goal could be calculated!
             # Reset goal for new selection and calculation in next step
-
-
-
-            logger.info(f"[{self.unique_id}] No path found for goal {self.goal}, resetting goal.")
-
-
 
             self.local_memory.frontier_info[self.goal].status = FrontierStatus.OPEN
             self.local_memory.frontier_info[self.goal].agent_id = None
@@ -160,16 +141,11 @@ class FBERobot(ExplorerRobot):
 
         if self.path is not None:
 
-
-
-            logger.info(
-                f"[{self.unique_id}] Moving along path: path_index={self.path_index}, current_pos={current_pos}"
-            )
-
-
-
             # If path points on current_pos (usually at the beginning of the path) -> continue with next position
-            while self.path_index < len(self.path) and self.path[self.path_index] == current_pos:
+            while (
+                self.path_index < len(self.path)
+                and self.path[self.path_index] == current_pos
+            ):
                 self.path_index += 1
 
             if self.path_index < len(self.path):
@@ -177,19 +153,11 @@ class FBERobot(ExplorerRobot):
                 next_pos = self.path[self.path_index]
                 # Check if next_pos is blocked
                 if any(
-                        agent.cell_blocking
-                        for agent in self.local_memory.grid_info[next_pos].agents
+                    agent.cell_blocking
+                    for agent in self.local_memory.grid_info[next_pos].agents
                 ):
                     # Blocked -> Wait till blocked_counter_max is reached, then resets path for recalculation in next step
                     self.blocked_counter += 1
-
-
-
-                    logger.info(
-                        f"[{self.unique_id}] Next pos {next_pos} is blocked. blocked_counter={self.blocked_counter}"
-                    )
-
-
 
                     if self.blocked_counter >= self.blocked_counter_max:
                         self.path = None  # Reset path for recalculation in next step
@@ -197,18 +165,14 @@ class FBERobot(ExplorerRobot):
                 else:
                     # Not blocked -> Move agent to next position on path
 
-
-
-                    logger.info(f"[{self.unique_id}] Moving to {next_pos}")
-
-
-
                     next_cell = [
-                        cell for cell in self.model.grid.all_cells
+                        cell
+                        for cell in self.model.grid.all_cells
                         if cell.coordinate == next_pos
                     ][0]
                     self.local_memory.grid_info[current_pos].agents = [
-                        agent for agent in self.local_memory.grid_info[current_pos].agents
+                        agent
+                        for agent in self.local_memory.grid_info[current_pos].agents
                         if agent.unique_id != self.unique_id
                     ]
                     self.orientation = self.normalize_round45_angle(
@@ -225,7 +189,7 @@ class FBERobot(ExplorerRobot):
                             unique_id=self.unique_id,
                             agent_type=type(self).__name__,
                             cell_blocking=self.cell_blocking,
-                            moving=self.moving
+                            moving=self.moving,
                         )
                     )
                     self.blocked_counter = 0
@@ -235,26 +199,19 @@ class FBERobot(ExplorerRobot):
         # Check if end of the path is reached
         if self.path is not None and self.path_index == len(self.path):
 
-
-
-            logger.info(f"[{self.unique_id}] End of path reached. Resetting path and goal.")
-
-
-
             self.path = None
             self.goal = None
 
         # If no movement was possible
         if not moved:
 
-
-
-            logger.info(f"[{self.unique_id}] No movement. Looking for unexplored neighbors.")
-
-
+            logger.info(
+                f"[{self.unique_id}] No movement. Looking for unexplored neighbors."
+            )
 
             unexplored_neighbors = [
-                pos for pos in self.local_memory.get_all_neighbor_positions(current_pos)
+                pos
+                for pos in self.local_memory.get_all_neighbor_positions(current_pos)
                 if pos not in self.local_memory.grid_info
             ]
             if unexplored_neighbors:
@@ -271,15 +228,8 @@ class FBERobot(ExplorerRobot):
                     )
                 )
 
-
-
-
-        logger.info(f"[{self.unique_id}] Frontier info: {self.local_memory.frontier_info}")
-
-
-
     def _new_gird_info_callback(self, data: dict[tuple[int, int], CellInfo]):
-        self.local_memory.grid_info = data
+        self.local_memory.grid_info = data.copy()
 
     def _new_frontier_info_callback(self, data: dict[tuple[int, int], FrontierInfo]):
-        self.local_memory.frontier_info = data
+        self.local_memory.frontier_info = data.copy()
