@@ -99,10 +99,15 @@ class FBERobot(ExplorerRobot):
                 status=FrontierStatus.OPEN, agent_id=None
             )
 
+
+
+        logger.info(f"[{self.unique_id}] Frontiers after scan: {self.local_memory.frontier_info}")
+
+
+
         # Loop for new attempt in same step, if no path was found, to avoid waiting when reachable goals exist
         attempts = 0
-        max_attempts = 3 # Necessary to avoid endless loop, when actually no path exist
-        # NOTE: With max_attempts = len(self.local_memory.frontier_info) is every frontier tried once.
+        max_attempts = len(self.local_memory.frontier_info)  # Necessary to avoid endless loop. Tries every existing goal once.
         blacklist = set() # Necessary to avoid the reselection of the same unreachable goal max_attempts-times.
         while attempts < max_attempts:
             # Check if current goal is still relevant. If not select new goal.
@@ -122,6 +127,14 @@ class FBERobot(ExplorerRobot):
                     break
                 else:
                     new_goal = self.goal_selector.select_goal(possible_goals)
+
+
+
+                    logger.info(f"[{self.unique_id}] Selected goal: {new_goal}")
+
+
+
+
                 # Check if new goal was selected. If all Frontiers are explored, no new goal is left.
                 if new_goal is not None:
                     self.goal = new_goal
