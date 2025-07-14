@@ -94,8 +94,8 @@ class FBERobot(ExplorerRobot):
             )
 
         # Check if current goal is still relevant. If not select new goal.
-        new_goal = None
-        if self.goal is None or self.goal not in self.local_memory.frontier_info.keys():
+        if (self.goal is None or
+                self.goal not in self.local_memory.frontier_info.keys()):
             new_goal = self.goal_selector.select_goal(
                 self.local_memory.frontier_info.keys()
             )
@@ -109,6 +109,7 @@ class FBERobot(ExplorerRobot):
                 self.path = None
 
             else:
+                self.goal = None
                 logger.info(
                     f"[{self.unique_id}] No goal available (all frontiers explored?)"
                 )
