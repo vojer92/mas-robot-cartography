@@ -93,48 +93,61 @@ class FBERobot(ExplorerRobot):
                 status=FrontierStatus.OPEN, agent_id=None
             )
 
-        # Check if current goal is still relevant. If not select new goal.
-        if (self.goal is None or
-                self.goal not in self.local_memory.frontier_info.keys()):
-            new_goal = self.goal_selector.select_goal(
-                self.local_memory.frontier_info.keys()
-            )
-            # Check if new goal was selected. If all Frontiers are explored, no new goal is left.
-            if new_goal is not None:
-                self.goal = new_goal
-                self.local_memory.frontier_info[self.goal].status = (
-                    FrontierStatus.IN_WORK
+        # Loop for new attempt in same step, if no path was found, to avoid waiting when reachable goals exist
+        attempts = 0
+        max_attempts = 3 # Necessary to avoid endless loop, when actually no path exist
+        while attempts < max_attempts:
+            # Check if current goal is still relevant. If not select new goal.
+            if (self.goal is None or
+                    self.goal not in self.local_memory.frontier_info.keys()):
+                new_goal = self.goal_selector.select_goal(
+                    self.local_memory.frontier_info.keys()
                 )
-                self.local_memory.frontier_info[self.goal].agent_id = self.unique_id
-                self.path = None
+                # Check if new goal was selected. If all Frontiers are explored, no new goal is left.
+                if new_goal is not None:
+                    self.goal = new_goal
+                    self.local_memory.frontier_info[self.goal].status = (
+                        FrontierStatus.IN_WORK
+                    )
+                    self.local_memory.frontier_info[self.goal].agent_id = self.unique_id
+                    self.path = None
 
-            else:
+                else:
+                    self.goal = None
+                    logger.info(
+                        f"[{self.unique_id}] No goal available (all frontiers explored?)"
+                    )
+                    break
+
+            # Calculate path to goal
+            if self.path is None and self.goal is not None:
+                self.path = self.pathfinder.find_path(self.goal)
+                logger.info(f"{self.path} ======= {self.goal}")
+                self.path_index = 0
+            if self.path is None and self.goal is not None:
+                # No path to goal could be calculated!
+                # Reset goal and start new selection and calculation
+                self.local_memory.frontier_info[self.goal].status = FrontierStatus.OPEN
+                self.local_memory.frontier_info[self.goal].agent_id = None
                 self.goal = None
-                logger.info(
-                    f"[{self.unique_id}] No goal available (all frontiers explored?)"
-                )
+                attempts += 1
+            else:
+                break
+
+        if attempts > 1:
+            logger.info(
+                "[%s] Needed %d attempts to find a reachable goal in this step.",
+                self.unique_id, attempts
+            )
+        elif self.path is None and self.goal is None:
+            logger.info(
+                "[%s] No reachable goal found after %d attempts.", self.unique_id, attempts
+            )
 
         # Broadcast new frontier and goal selection information to all robots
         self.pubSubBroker.publish(
             "new_frontier_info", self.local_memory.frontier_info, self.unique_id
         )
-
-        # Calculate path to goal
-        if self.path is None and self.goal is not None:
-            self.path = self.pathfinder.find_path(self.goal)
-            logger.info(f"{self.path} ======= {self.goal}")
-            self.path_index = 0
-
-        if self.path is None and self.goal is not None:
-            # No path to goal could be calculated!
-            # Reset goal for new selection and calculation in next step
-
-            self.local_memory.frontier_info[self.goal].status = FrontierStatus.OPEN
-            self.local_memory.frontier_info[self.goal].agent_id = None
-            self.goal = None
-            self.pubSubBroker.publish(
-                "new_frontier_info", self.local_memory.frontier_info, self.unique_id
-            )
 
         # Move along path
         current_pos = self.cell.coordinate
