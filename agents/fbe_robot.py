@@ -73,6 +73,12 @@ class FBERobot(ExplorerRobot):
 
     def step(self):
 
+
+
+        logger.info(f"[{self.unique_id}] Position begin step {self.cell.coordinate}")
+
+
+
         # Environment perception
         self.viewport = self.scan_environment()
         self.pubSubBroker.publish(
@@ -112,6 +118,7 @@ class FBERobot(ExplorerRobot):
 
 
                     self.goal = None
+                    self.path = None
                     break
                 else:
                     new_goal = self.goal_selector.select_goal(possible_goals)
@@ -132,6 +139,7 @@ class FBERobot(ExplorerRobot):
 
                 else:
                     self.goal = None
+                    self.path = None
 
 
 
@@ -282,6 +290,12 @@ class FBERobot(ExplorerRobot):
                         )
                     )
                 )
+
+
+
+        logger.info(f"[{self.unique_id}] Position end step {self.cell.coordinate}")
+
+
 
     def _new_gird_info_callback(self, data: dict[tuple[int, int], CellInfo]):
         self.local_memory.grid_info = data.copy()
