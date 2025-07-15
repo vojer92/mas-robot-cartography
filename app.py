@@ -1,3 +1,4 @@
+import solara
 from matplotlib.markers import MarkerStyle
 from mesa.experimental.devs import ABMSimulator
 from mesa.visualization import (
@@ -46,13 +47,17 @@ def exploration_portrayal(agent):
             portrayal["size"] = 180
     elif isinstance(agent, Obstacle):
         portrayal["color"] = "#000000"
-#        portrayal["marker"] = "s" #Quadratic obstacles to match the form of the Ground-agents
-        portrayal["marker"] = "o" #Round obstacles for better visualization of Moore-movements
+        #        portrayal["marker"] = "s" #Quadratic obstacles to match the form of the Ground-agents
+        portrayal["marker"] = (
+            "o"  # Round obstacles for better visualization of Moore-movements
+        )
         portrayal["zorder"] = 2
         portrayal["size"] = 180
 
     return portrayal
 
+
+robot_types = ["FBERobot", "RandomWalkRobot"]
 
 model_params = {
     "seed": {
@@ -63,6 +68,12 @@ model_params = {
     "initial_no_robots": Slider("Robot Population", 1, 1, 10),
     "view_radius": Slider("View Radius", 1, 1, 5),
     "view_angle": Slider("View Angle", 90, 45, 360, 45),
+    "robot_type_str": {
+        "type": "Select",
+        "value": "FBERobot",
+        "values": robot_types,
+        "label": "Robot Type",
+    },
     #    "view_resulution": Slider("View Resulution", 5, 10, 62),
 }
 
@@ -78,7 +89,7 @@ def post_process_lines(ax):
     ax.set_title("Fortschritt der Erkundung")
     ax.set_ylabel("Anzahl Erkundeter Felder")
     ax.legend(loc="center left", bbox_to_anchor=(1, 0.9))
-    ax.grid(True, linestyle='--', alpha=0.6)
+    ax.grid(True, linestyle="--", alpha=0.6)
 
 
 space_component = make_space_component(

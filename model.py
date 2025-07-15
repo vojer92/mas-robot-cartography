@@ -1,6 +1,6 @@
 import math
-import numpy as np
 
+import numpy as np
 from mesa import Model
 from mesa.datacollection import DataCollector
 from mesa.discrete_space import OrthogonalMooreGrid
@@ -11,10 +11,9 @@ from agents.fbe_robot import FBERobot
 from agents.ground import Ground
 from agents.obstacle import Obstacle
 from agents.random_walk_robot import RandomWalkRobot
+from algorithms.reachability_analysis import (flood_fill, load_no_unreachable,
+                                              save_no_unreachable)
 from communication.pubSubBroker import PubSubBroker
-from algorithms.reachability_analysis import load_no_unreachable
-from algorithms.reachability_analysis import flood_fill
-from algorithms.reachability_analysis import save_no_unreachable
 
 #OBSTACLES = [
 #    [(-2, 0), (-1, 0), (0, 0)],
@@ -36,7 +35,7 @@ class Exploration(Model):
         view_angle=90,
         view_resolution=5,
         initial_no_robots=1,
-        robot_type: ExplorerRobot = FBERobot,
+        robot_type_str: str = "FBERobot",
         seed=None,
         simulator: ABMSimulator = ABMSimulator(),
     ):
@@ -51,7 +50,6 @@ class Exploration(Model):
         self.no_robots = None
 
         self.initial_no_robots = initial_no_robots
-        self.robot_type = robot_type
 
         self.grid = OrthogonalMooreGrid(
             [self.height, self.width],
@@ -90,21 +88,41 @@ class Exploration(Model):
             if not any(isinstance(agent, Obstacle) for agent in cell.agents)
         ]
 
+                  
+
         if self.initial_no_robots:
-            robot_type.create_agents(
-                self,
-                self.initial_no_robots,
-                pubSubBroker=self.pubSubBroker,
-                cell=self.random.sample(free_cells, k=self.initial_no_robots),
-                # Sample instead of choice to avoid duplicates
-                # k have to be >= ground_cells.len! If not sample throws error.
-                view_radius=view_radius,
-                view_angle=view_angle,
-                orientation=self.random.choices(
-                    range(0, 315, 45), k=self.initial_no_robots
-                ),
-                view_resolution=view_resolution,
-            )
+            match robot_type_str:
+                case "FBERobot":
+                    self.robot_type = FBERobot
+                    self.robot_type.create_agents(
+                        self,
+                        self.initial_no_robots,
+                        pubSubBroker=self.pubSubBroker,
+                        cell=self.random.sample(free_cells, k=self.initial_no_robots),
+                        # Sample instead of choice to avoid duplicates
+                        # k have to be >= ground_cells.len! If not sample throws error.
+                        view_radius=view_radius,
+                        view_angle=view_angle,
+                        orientation=self.random.choices(
+                            range(0, 315, 45), k=self.initial_no_robots
+                        ),
+                        view_resolution=view_resolution,
+                    )
+                case "RandomWalkRobot": 
+                    self.robot_type = RandomWalkRobot
+                    self.robot_type.create_agents(
+                        self,
+                        self.initial_no_robots,
+                        cell=self.random.sample(free_cells, k=self.initial_no_robots),
+                        # Sample instead of choice to avoid duplicates
+                        # k have to be >= ground_cells.len! If not sample throws error.
+                        view_radius=view_radius,
+                        view_angle=view_angle,
+                        orientation=self.random.choices(
+                            range(0, 315, 45), k=self.initial_no_robots
+                        ),
+                        view_resolution=view_resolution,
+                    )
 
 
         # Determine unreachable positions
