@@ -46,9 +46,10 @@ class LocalMemory:
         (-1, -1),
     ]
 
-    def __init__(self,
-        environment_grid_width: int, # Necessary for environment_grid-border-checks
-        environment_grid_height: int, # Necessary for environment_grid-border-checks
+    def __init__(
+        self,
+        environment_grid_width: int,  # Necessary for environment_grid-border-checks
+        environment_grid_height: int,  # Necessary for environment_grid-border-checks
     ):
         self.grid_info: dict[tuple[int, int], CellInfo] = {}  # {(x,y): CellInfo}
         self.frontier_info: dict[tuple[int, int], FrontierInfo] = (
@@ -80,7 +81,10 @@ class LocalMemory:
         for dx, dy in offsets:
             nx, ny = pos[0] + dx, pos[1] + dy
             # Check for environment_grid-borders
-            if 0 <= nx < self.environment_grid_width and 0 <= ny < self.environment_grid_height:
+            if (
+                0 <= nx < self.environment_grid_width
+                and 0 <= ny < self.environment_grid_height
+            ):
                 neighbor_positions.append((nx, ny))
         return neighbor_positions
 
@@ -110,6 +114,8 @@ class ExplorerRobot(ABC, CellAgent):
     ):
         super().__init__(model)
 
+        self.step_count = 0
+
         self.cell = cell
         self.view_radius = view_radius
         if view_angle == 360:
@@ -127,7 +133,9 @@ class ExplorerRobot(ABC, CellAgent):
 
         self.viewport: list[tuple[int, int]] = []  # Current view
 
-        self.local_memory = LocalMemory(self.model.width, self.model.height)  # Local memory
+        self.local_memory = LocalMemory(
+            self.model.width, self.model.height
+        )  # Local memory
 
     @abstractmethod
     def step(self):

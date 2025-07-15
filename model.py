@@ -1,4 +1,5 @@
 import math
+from functools import reduce
 
 import numpy as np
 from mesa import Model
@@ -35,8 +36,10 @@ class Exploration(Model):
         view_angle=90,
         view_resolution=5,
         initial_no_robots=1,
+        factor_distance = 1.0,
+        factor_size = 0.1,
         robot_type_str: str = "FBERobot",
-        seed=None,
+        seed=42,
         simulator: ABMSimulator = ABMSimulator(),
     ):
         super().__init__(seed=seed)
@@ -59,20 +62,6 @@ class Exploration(Model):
         )
 
         self.pubSubBroker = PubSubBroker()
-
-        model_reporter = {
-            "Explored": lambda m: len(
-                [
-                    agent
-                    for agent in self.grid.all_cells.agents
-                    if isinstance(agent, Ground) and agent.explored
-                ]
-            )
-            # TODO: Add all metrics, e.g. exploration_progress
-        }
-
-
-        self.datacollector = DataCollector(model_reporter)
 
         # Place obstacles
         self._place_obstacles()
@@ -107,6 +96,8 @@ class Exploration(Model):
                             range(0, 315, 45), k=self.initial_no_robots
                         ),
                         view_resolution=view_resolution,
+                        factor_size=factor_size, 
+                        factor_distance=factor_distance,
                     )
                 case "RandomWalkRobot": 
                     self.robot_type = RandomWalkRobot
@@ -164,6 +155,34 @@ class Exploration(Model):
 
         self.no_unreachable = no_unreachable
 
+        model_reporter = {
+            "Explored": lambda m: len(
+                [
+                    agent
+                    for agent in self.grid.all_cells.agents
+                    if isinstance(agent, Ground) and agent.explored
+                ]
+            ) / (self.width * self.height) * 100.0,
+            "Explored_fields": lambda m: len(
+                [
+                    agent
+                    for agent in self.grid.all_cells.agents
+                    if isinstance(agent, Ground) and agent.explored
+                ]
+            ),
+            "Step_Count_All_Agents": lambda m: reduce(lambda a, b: a + b, [
+                agent.step_count 
+                for agent in self.grid.all_cells.agents
+                if isinstance(agent, ExplorerRobot)
+            ])
+            # TODO: Add all metrics, e.g. exploration_progress
+        }
+
+        agenttype_reporter = {
+            ExplorerRobot: {"Step_Count": lambda a: a.step_count},
+        }
+
+        self.datacollector = DataCollector(model_reporters=model_reporter, agenttype_reporters=agenttype_reporter)
 
         self.running = True
         self.datacollector.collect(self)

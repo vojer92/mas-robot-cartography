@@ -86,8 +86,8 @@ def post_process_space(ax):
 
 
 def post_process_lines(ax):
-    ax.set_title("Fortschritt der Erkundung")
-    ax.set_ylabel("Anzahl Erkundeter Felder")
+    ax.set_title("Fortschritt der Erkundung in %")
+    ax.set_ylabel("Prozentwert der Erkundung")
     ax.legend(loc="center left", bbox_to_anchor=(1, 0.9))
     ax.grid(True, linestyle="--", alpha=0.6)
 
