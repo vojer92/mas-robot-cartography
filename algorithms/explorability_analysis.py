@@ -19,12 +19,12 @@ def flood_fill(
 ) -> np.ndarray:
     """
     Does a flood fill / broad first search via Moore-neighborhood on a 2D-grid,
-    to determine all from the start position reachable positions.
+    to determine all from the start position explorable positions.
     :grid: 2D numpy array with obstacle-information (obstacle==1, else 0)
     :start_pos: start position
 
     """
-    reachable = np.zeros_like(obstacle_grid, dtype=bool) #Initialize grid-like array
+    explorable = np.zeros_like(obstacle_grid, dtype=bool) #Initialize grid-like array
     queue = deque([start_pos]) #Initialize a double-ended queue and add start_pos
 
     while queue:
@@ -32,20 +32,19 @@ def flood_fill(
 
         if not (0 <= x < obstacle_grid.shape[0] and 0 <= y < obstacle_grid.shape[1]): #Check grid borders
             continue
-        if reachable[x,y]: #Check if already visited
+        if explorable[x,y]: #Check if already visited
             continue
-        if obstacle_grid[x,y] ==1: #Check for obstacle
+        explorable[x,y] = True #Mark position as explorable
+        if obstacle_grid[x,y] ==1: #Check for obstacle: Cell is explorable, but the current flood-fill-path ends here
             continue
-        reachable[x,y] = True #Mark position as reachable
-
         for dx, dy in MOORE_NEIGHBORS: #Add neighbors to queue
             queue.append((x+dx, y+dy))
 
-    return reachable
+    return explorable
 
 
 
-def _mask_unreachable_filename(
+def _mask_unexplorable_filename(
     seed: int,
     grid_width: int,
     grid_height: int,
@@ -58,7 +57,7 @@ def _mask_unreachable_filename(
     os.makedirs(directory, exist_ok=True) #Check for repository, create if not already existing
     return f"{directory}/mask_seed{seed}_size{grid_width}x{grid_height}_no_agents{no_agents}.npy"
 
-def save_unreachable_mask(
+def save_unexplorable_mask(
     mask: np.ndarray,
     seed: int,
     grid_width: int,
@@ -69,9 +68,9 @@ def save_unreachable_mask(
     """
     Saves the given mask as .npy file in the given directory
     """
-    np.save(_mask_unreachable_filename(seed, grid_width, grid_height, no_agents, directory), mask)
+    np.save(_mask_unexplorable_filename(seed, grid_width, grid_height, no_agents, directory), mask)
 
-def load_unreachable_mask(
+def load_unexplorable_mask(
     seed: int,
     grid_width: int,
     grid_height: int,
@@ -81,14 +80,14 @@ def load_unreachable_mask(
     """
     Loads a saved mask from .npy file in the given directory"
     """
-    filename = _mask_unreachable_filename(seed, grid_width, grid_height, no_agents, directory)
+    filename = _mask_unexplorable_filename(seed, grid_width, grid_height, no_agents, directory)
     if os.path.exists(filename):
         return np.load(filename)
     return None
 
 
 
-def _no_unreachable_filename(
+def _no_unexplorable_filename(
         seed: int,
         grid_width: int,
         grid_height: int,
@@ -96,28 +95,28 @@ def _no_unreachable_filename(
         directory: str
 ) -> str:
     os.makedirs(directory, exist_ok=True) #Check for repository, create if not already existing
-    return f"{directory}/no_unreachable_seed{seed}_size{grid_width}x{grid_height}_no_agents{no_agents}.txt"
+    return f"{directory}/no_unexplorable_seed{seed}_size{grid_width}x{grid_height}_no_agents{no_agents}.txt"
 
-def save_no_unreachable(
-    no_unreachable: int,
+def save_no_unexplorable(
+    no_unexplorable: int,
     seed: int,
     grid_width: int,
     grid_height: int,
     no_agents: int,
     directory: str = "masks"
 ) -> None:
-    filename = _no_unreachable_filename(seed, grid_width, grid_height, no_agents, directory)
+    filename = _no_unexplorable_filename(seed, grid_width, grid_height, no_agents, directory)
     with open(filename, "w") as f:
-        f.write(str(no_unreachable))
+        f.write(str(no_unexplorable))
 
-def load_no_unreachable(
+def load_no_unexplorable(
     seed: int,
     grid_width: int,
     grid_height: int,
     no_agents: int,
     directory: str = "masks"
 ) -> int | None:
-    filename = _no_unreachable_filename(seed, grid_width, grid_height, no_agents, directory)
+    filename = _no_unexplorable_filename(seed, grid_width, grid_height, no_agents, directory)
     if os.path.exists(filename):
         with open(filename, "r") as f:
             return int(f.read())
