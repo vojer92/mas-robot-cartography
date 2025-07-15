@@ -101,7 +101,7 @@ class FBERobot(ExplorerRobot):
 
 
 
-        logger.info(f"[{self.unique_id}] Frontiers after scan: {self.local_memory.frontier_info}")
+#        logger.info(f"[{self.unique_id}] Frontiers after scan: {self.local_memory.frontier_info}")
 
 
 
@@ -273,7 +273,6 @@ class FBERobot(ExplorerRobot):
 
         # Check if end of the path is reached
         if self.path is not None and self.path_index == len(self.path):
-
             self.path = None
             self.goal = None
 
