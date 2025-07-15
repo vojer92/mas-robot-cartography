@@ -73,6 +73,12 @@ class FBERobot(ExplorerRobot):
 
     def step(self):
 
+
+
+        logger.info(f"[{self.unique_id}] Position begin step {self.cell.coordinate}")
+
+
+
         # Environment perception
         self.viewport = self.scan_environment()
         self.pubSubBroker.publish(
@@ -93,47 +99,117 @@ class FBERobot(ExplorerRobot):
                 status=FrontierStatus.OPEN, agent_id=None
             )
 
-        # Check if current goal is still relevant. If not select new goal.
-        new_goal = None
-        if self.goal is None or self.goal not in self.local_memory.frontier_info.keys():
-            new_goal = self.goal_selector.select_goal(
-                self.local_memory.frontier_info.keys()
-            )
-            # Check if new goal was selected. If all Frontiers are explored, no new goal is left.
-            if new_goal is not None:
-                self.goal = new_goal
-                self.local_memory.frontier_info[self.goal].status = (
-                    FrontierStatus.IN_WORK
-                )
-                self.local_memory.frontier_info[self.goal].agent_id = self.unique_id
-                self.path = None
 
+
+#        logger.info(f"[{self.unique_id}] Frontiers after scan: {self.local_memory.frontier_info}")
+
+
+
+        # Loop for new attempt in same step, if no path was found, to avoid waiting when reachable goals exist
+        attempts = 0
+        max_attempts = len(self.local_memory.frontier_info)  # Necessary to avoid endless loop. Tries every existing goal once.
+        blacklist = set() # Necessary to avoid the reselection of the same unreachable goal max_attempts-times.
+        while attempts < max_attempts:
+            # Check if current goal is still relevant. If not select new goal.
+            if (self.goal is None or
+                    self.goal not in self.local_memory.frontier_info.keys()):
+                possible_goals = {
+                    pos for pos, frontier in self.local_memory.frontier_info.items()
+                    if frontier.status == FrontierStatus.OPEN
+                } - blacklist
+                if not possible_goals:
+
+
+
+                    logger.info(f"[{self.unique_id}] No possible goals left to try in this step.")
+
+
+
+                    self.goal = None
+                    self.path = None
+                    break
+                else:
+                    new_goal = self.goal_selector.select_goal(possible_goals)
+
+
+
+                    logger.info(f"[{self.unique_id}] Selected goal: {new_goal}")
+
+
+
+
+                # Check if new goal was selected.
+                if new_goal is not None:
+                    self.goal = new_goal
+                    self.local_memory.frontier_info[self.goal].status = (
+                        FrontierStatus.IN_WORK
+                    )
+                    self.local_memory.frontier_info[self.goal].agent_id = self.unique_id
+                    self.path = None
+
+
+
+                    logger.info(f"[{self.unique_id}] Finally selected goal: {self.goal}")
+
+
+
+                else:
+                    # If all Frontiers are explored, no new goal is left.
+                    self.goal = None
+                    self.path = None
+
+
+
+                    logger.info(
+                        f"[{self.unique_id}] No goal available (all frontiers explored?)"
+                    )
+
+
+
+                    break
+
+            # Calculate path to goal
+            if self.path is None and self.goal is not None:
+                self.path = self.pathfinder.find_path(self.goal)
+
+
+
+                logger.info(f"[{self.unique_id}] {self.path} => {self.goal}")
+
+
+
+                self.path_index = 0
+            if self.path is None and self.goal is not None:
+                # No path to goal could be calculated!
+                # Add goal to blacklist
+                blacklist.add(self.goal)
+                # Start new selection and calculation
+                self.local_memory.frontier_info[self.goal].status = FrontierStatus.OPEN
+                self.local_memory.frontier_info[self.goal].agent_id = None
+                self.goal = None
+                attempts += 1
+                continue
             else:
-                logger.info(
-                    f"[{self.unique_id}] No goal available (all frontiers explored?)"
-                )
+                break
+
+
+
+        if attempts > 1:
+            logger.info(
+                "[%s] Needed %d attempts to find a reachable goal in this step.",
+                self.unique_id, attempts
+            )
+        elif self.path is None and self.goal is None:
+            logger.info(
+                "[%s] No reachable goal found after %d attempts.", self.unique_id, attempts
+            )
+
+
 
         # Broadcast new frontier and goal selection information to all robots
         self.pubSubBroker.publish(
             "new_frontier_info", self.local_memory.frontier_info, self.unique_id
         )
-
-        # Calculate path to goal
-        if self.path is None and self.goal is not None:
-            self.path = self.pathfinder.find_path(self.goal)
-            logger.info(f"{self.path} ======= {self.goal}")
-            self.path_index = 0
-
-        if self.path is None and self.goal is not None:
-            # No path to goal could be calculated!
-            # Reset goal for new selection and calculation in next step
-
-            self.local_memory.frontier_info[self.goal].status = FrontierStatus.OPEN
-            self.local_memory.frontier_info[self.goal].agent_id = None
-            self.goal = None
-            self.pubSubBroker.publish(
-                "new_frontier_info", self.local_memory.frontier_info, self.unique_id
-            )
 
         # Move along path
         current_pos = self.cell.coordinate
@@ -164,7 +240,6 @@ class FBERobot(ExplorerRobot):
                         self.blocked_counter = 0
                 else:
                     # Not blocked -> Move agent to next position on path
-
                     next_cell = [
                         cell
                         for cell in self.model.grid.all_cells
@@ -198,16 +273,19 @@ class FBERobot(ExplorerRobot):
 
         # Check if end of the path is reached
         if self.path is not None and self.path_index == len(self.path):
-
             self.path = None
             self.goal = None
 
         # If no movement was possible
         if not moved:
 
+
+
             logger.info(
                 f"[{self.unique_id}] No movement. Looking for unexplored neighbors."
             )
+
+
 
             unexplored_neighbors = [
                 pos
@@ -227,6 +305,12 @@ class FBERobot(ExplorerRobot):
                         )
                     )
                 )
+
+
+
+        logger.info(f"[{self.unique_id}] Position end step {self.cell.coordinate}")
+
+
 
     def _new_gird_info_callback(self, data: dict[tuple[int, int], CellInfo]):
         self.local_memory.grid_info = data.copy()
