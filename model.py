@@ -12,8 +12,8 @@ from agents.fbe_robot import FBERobot
 from agents.ground import Ground
 from agents.obstacle import Obstacle
 from agents.random_walk_robot import RandomWalkRobot
-from algorithms.reachability_analysis import (flood_fill, load_no_unreachable,
-                                              save_no_unreachable)
+from algorithms.explorability_analysis import (flood_fill, load_no_unexplorable,
+                                               save_no_unexplorable)
 from communication.pubSubBroker import PubSubBroker
 
 #OBSTACLES = [
@@ -116,19 +116,19 @@ class Exploration(Model):
                     )
 
 
-        # Determine unreachable positions
+        # Determine unexplorable positions
         # Check if already calculated
-        no_unreachable = load_no_unreachable(
+        no_unexplorable = load_no_unexplorable(
             seed = self.seed,
             grid_width=self.width,
             grid_height=self.height,
             no_agents=self.initial_no_robots,
         )
-        if no_unreachable is None:
+        if no_unexplorable is None:
             # Determine all agent positions as start positions for flood-fill
             agent_positions = [
                 (agent.cell.coordinate[0], agent.cell.coordinate[1])
-                for agent in self.agents_by_type[robot_type]
+                for agent in self.agents_by_type[self.robot_type]
             ]
             # Create obstacle grid as base structure for flood-fill
             obstacle_grid = np.zeros((self.height, self.width), dtype=int)
@@ -137,23 +137,23 @@ class Exploration(Model):
                     cell = self.grid[x, y] # mesa: at first x (width), then y (height)
                     if any(isinstance(agent,Obstacle) for agent in cell.agents):
                         obstacle_grid[y,x] = 1 # NumPy: at first y (height), then x (width)
-            # Create reachability-mask for all robot-start-positions and unite all reachable positions
-            reachable = np.zeros_like(obstacle_grid, dtype=bool)
+            # Create reachability-mask for all robot-start-positions and unite all explorable positions
+            explorable = np.zeros_like(obstacle_grid, dtype=bool)
             for pos in agent_positions:
-                reachable |= flood_fill(obstacle_grid, pos) #In-place bitwise or-operation
-            # Calculate number of unreachable positions
-            no_unreachable = np.size(reachable) - np.count_nonzero(reachable)
-            # NOTE: Optional save mask of unreachable positions for highlighting them in visualization
-            # Save no_unreachable
-            save_no_unreachable(
-                no_unreachable=no_unreachable,
+                explorable |= flood_fill(obstacle_grid, pos) #In-place bitwise or-operation
+            # Calculate number of unexplorable positions
+            no_unexplorable = np.size(explorable) - np.count_nonzero(explorable)
+            # NOTE: Optional save mask of unexplorable positions for highlighting them in visualization
+            # Save no_unexplorable
+            save_no_unexplorable(
+                no_unexplorable=no_unexplorable,
                 seed=self.seed,
                 grid_width=self.width,
                 grid_height=self.height,
                 no_agents=self.initial_no_robots,
             )
 
-        self.no_unreachable = no_unreachable
+        self.no_unexplorable = no_unexplorable
 
         model_reporter = {
             "Explored": lambda m: len(
