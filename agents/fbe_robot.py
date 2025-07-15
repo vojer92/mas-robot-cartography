@@ -113,7 +113,10 @@ class FBERobot(ExplorerRobot):
             # Check if current goal is still relevant. If not select new goal.
             if (self.goal is None or
                     self.goal not in self.local_memory.frontier_info.keys()):
-                possible_goals = set(self.local_memory.frontier_info.keys()) - blacklist
+                possible_goals = {
+                    pos for pos, frontier in self.local_memory.frontier_info.items()
+                    if frontier.status == FrontierStatus.OPEN
+                } - blacklist
                 if not possible_goals:
 
 
@@ -135,7 +138,7 @@ class FBERobot(ExplorerRobot):
 
 
 
-                # Check if new goal was selected. If all Frontiers are explored, no new goal is left.
+                # Check if new goal was selected.
                 if new_goal is not None:
                     self.goal = new_goal
                     self.local_memory.frontier_info[self.goal].status = (
@@ -146,11 +149,12 @@ class FBERobot(ExplorerRobot):
 
 
 
-                    logger.info(f"[{self.unique_id}] Goal: {self.goal}")
+                    logger.info(f"[{self.unique_id}] Finally selected goal: {self.goal}")
 
 
 
                 else:
+                    # If all Frontiers are explored, no new goal is left.
                     self.goal = None
                     self.path = None
 
@@ -236,7 +240,6 @@ class FBERobot(ExplorerRobot):
                         self.blocked_counter = 0
                 else:
                     # Not blocked -> Move agent to next position on path
-
                     next_cell = [
                         cell
                         for cell in self.model.grid.all_cells
