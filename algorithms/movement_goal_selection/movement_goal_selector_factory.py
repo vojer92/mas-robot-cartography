@@ -18,7 +18,7 @@ class MovementGoalSelectorFactory:
             name: MovementGoalSelectorEnum,
             factor_distance: float = 1.0,
             distance_heuristic: Callable[[tuple, tuple], float] = lambda a, b: np.linalg.norm((a[0] - b[0], a[1] - b[1])), # Euclidean distance as default
-            factor_size: float = 0.25,
+            factor_size: float = 0.1,
             *args, **kwargs
     ) -> MovementGoalSelector:
         match name:
