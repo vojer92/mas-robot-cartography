@@ -226,6 +226,7 @@ class FBERobot(ExplorerRobot):
                             )
                         )
                         self.cell = next_cell
+                        self.step_count += 1
                         self.local_memory.grid_info[next_pos].agents.append(
                             AgentInfo(
                                 unique_id=self.unique_id,
