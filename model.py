@@ -12,7 +12,8 @@ from agents.fbe_robot import FBERobot
 from agents.ground import Ground
 from agents.obstacle import Obstacle
 from agents.random_walk_robot import RandomWalkRobot
-from algorithms.explorability_analysis import (flood_fill, load_no_unexplorable,
+from algorithms.explorability_analysis import (flood_fill,
+                                               load_no_unexplorable,
                                                save_no_unexplorable)
 from communication.pubSubBroker import PubSubBroker
 
@@ -29,8 +30,7 @@ from communication.pubSubBroker import PubSubBroker
 class Exploration(Model):
     def __init__(
         self,
-        width=20,
-        height=20,
+        grid_size=20,
         obstacle_density=0.3,
         view_radius=1,
         view_angle=90,
@@ -47,8 +47,8 @@ class Exploration(Model):
         self.simulator = simulator
         self.simulator.setup(self)
 
-        self.height = height
-        self.width = width
+        self.height = grid_size
+        self.width = grid_size
         self.obstacle_density = obstacle_density
         self.no_robots = None
 
@@ -192,6 +192,9 @@ class Exploration(Model):
             self.agents_by_type[self.robot_type].shuffle_do("step")
 
         self.datacollector.collect(self)
+
+        if self.steps == 999:
+            self.simulator.reset()
 
     def _place_obstacles(self):
         free_cells = [

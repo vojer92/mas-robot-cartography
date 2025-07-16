@@ -1,4 +1,3 @@
-import logging
 import math
 
 from mesa import Model
@@ -26,9 +25,6 @@ from algorithms.movement_goal_selection.movement_goal_selector_factory import (
 from algorithms.pathfinding.pathfinder_enum import PathfinderEnum
 from algorithms.pathfinding.pathfinder_factory import PathfinderFactory
 from communication.pubSubBroker import PubSubBroker
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 
 class FBERobot(ExplorerRobot):
@@ -77,9 +73,6 @@ class FBERobot(ExplorerRobot):
         )
 
     def step(self):
-
-        logger.info(f"[{self.unique_id}] Position begin step {self.cell.coordinate}")
-
         # Environment perception
         self.viewport = self.scan_environment()
         self.pubSubBroker.publish(
@@ -99,8 +92,6 @@ class FBERobot(ExplorerRobot):
             self.local_memory.frontier_info[pos] = FrontierInfo(
                 status=FrontierStatus.OPEN, agent_id=None
             )
-
-        #logger.info(f"[{self.unique_id}] Frontiers after scan: {self.local_memory.frontier_info}")
 
         # Loop for new attempt in same step, if no path was found, to avoid waiting when reachable goals exist
         attempts = 0
@@ -122,18 +113,11 @@ class FBERobot(ExplorerRobot):
                     if frontier.status == FrontierStatus.OPEN
                 } - blacklist
                 if not possible_goals:
-
-                    logger.info(
-                        f"[{self.unique_id}] No possible goals left to try in this step."
-                    )
-
                     self.goal = None
                     self.path = None
                     break
                 else:
                     new_goal = self.goal_selector.select_goal(possible_goals)
-
-                    logger.info(f"[{self.unique_id}] Selected goal: {new_goal}")
 
                 # Check if new goal was selected.
                 if new_goal is not None:
@@ -144,27 +128,16 @@ class FBERobot(ExplorerRobot):
                     self.local_memory.frontier_info[self.goal].agent_id = self.unique_id
                     self.path = None
 
-                    logger.info(
-                        f"[{self.unique_id}] Finally selected goal: {self.goal}"
-                    )
-
                 else:
                     # If all Frontiers are explored, no new goal is left.
                     self.goal = None
                     self.path = None
-
-                    logger.info(
-                        f"[{self.unique_id}] No goal available (all frontiers explored?)"
-                    )
 
                     break
 
             # Calculate path to goal
             if self.path is None and self.goal is not None:
                 self.path = self.pathfinder.find_path(self.goal)
-
-                logger.info(f"[{self.unique_id}] {self.path} => {self.goal}")
-
                 self.path_index = 0
             if self.path is None and self.goal is not None:
                 # No path to goal could be calculated!
@@ -178,19 +151,6 @@ class FBERobot(ExplorerRobot):
                 continue
             else:
                 break
-
-        if attempts > 1:
-            logger.info(
-                "[%s] Needed %d attempts to find a reachable goal in this step.",
-                self.unique_id,
-                attempts,
-            )
-        elif self.path is None and self.goal is None:
-            logger.info(
-                "[%s] No reachable goal found after %d attempts.",
-                self.unique_id,
-                attempts,
-            )
 
         # Broadcast new frontier and goal selection information to all robots
         self.pubSubBroker.publish(
@@ -281,8 +241,6 @@ class FBERobot(ExplorerRobot):
             if self.path is not None and self.path_index == len(self.path):
                 self.path = None
                 self.goal = None
-
-        logger.info(f"[{self.unique_id}] Position end step {self.cell.coordinate}")
 
     def _new_gird_info_callback(self, data: dict[tuple[int, int], CellInfo]):
         self.local_memory.grid_info = data.copy()
