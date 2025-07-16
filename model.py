@@ -162,7 +162,7 @@ class Exploration(Model):
                     for agent in self.grid.all_cells.agents
                     if isinstance(agent, Ground) and agent.explored
                 ]
-            ) / (self.width * self.height) * 100.0,
+            ) / ((self.width * self.height) - self.no_unexplorable) * 100.0,
             "Explored_fields": lambda m: len(
                 [
                     agent
