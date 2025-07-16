@@ -1,29 +1,48 @@
 import csv
+from datetime import datetime
+
+import pandas as pd
+from mesa.batchrunner import batch_run
+
+from model import Exploration
 
 MAX_STEPS = 1000
 
+if __name__ == "__main__":
+    now = datetime.now()
 
-def run_batch(param_dict, model_class, output_file="results.csv"):
-    keys = list(param_dict.keys())
-    num_runs = len(param_dict[keys[0]])
+    # params = {
+    #     "initial_no_robots": range(1, 6, 1),
+    #     "grid_size": range(30, 51, 10),
+    #     "robot_type_str": ["RandomWalkRobot", "FBERobot"],
+    #     "view_radius": 1,
+    #     "view_angle": [20, 45, 90, 180, 360],
+    #     "seed": 42,
+    #     "factor_distance": 1.0,
+    #     "factor_size": [0.0, 0.1, 0.25],
+    # }
 
-    with open(output_file, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(keys + ["steps_run", "result"])
+    params = {
+        "initial_no_robots": 5,
+        "grid_size": 100,
+        "robot_type_str": ["RandomWalkRobot", "FBERobot"],
+        "view_radius": 1,
+        "view_angle": 90,
+        "seed": range(1, 51, 1),
+        "factor_distance": 0.5,
+        "factor_size": 0.5,
+    }
 
-        for i in range(num_runs):
-            params = {k: param_dict[k][i] for k in keys}
-            model = model_class(**params)
+    results = batch_run(
+        Exploration,
+        parameters=params,
+        iterations=1,
+        max_steps=MAX_STEPS,
+        number_processes=None,
+        data_collection_period=1,
+        display_progress=True,
+    )
 
-            step = 0
-            while model.running and step < MAX_STEPS:
-                model.step()
-                step += 1
-
-            result = (
-                model.get_results()
-                if hasattr(model, "get_results")
-                else getattr(model, "final_result", None)
-            )
-            writer.writerow([params[k] for k in keys] + [step, result])
-
+    df_results = pd.DataFrame.from_dict(results)
+    print(df_results)
+    df_results.to_csv(f"data/Results-{now.strftime("%d.%m.%Y-%H:%M:%S")}.csv", sep=";", index=False)
