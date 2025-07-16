@@ -57,7 +57,8 @@ class RandomWalkRobot(ExplorerRobot):
                     )
                 )
             )
-            # Move
+            # Move and increment stepcount
             self.cell = target_cell
+            self.step_count += 1
         else:
             self.orientation = self.normalize_round45_angle(self.random.randint(0, 360))
