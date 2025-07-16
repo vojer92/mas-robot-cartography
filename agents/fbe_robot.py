@@ -157,94 +157,90 @@ class FBERobot(ExplorerRobot):
             "new_frontier_info", self.local_memory.frontier_info, self.unique_id
         )
 
-        # Move along path
+
+        # Determine current position
         current_pos = self.cell.coordinate
-        moved = False
 
-        if self.path is not None:
-
-            # If path points on current_pos (usually at the beginning of the path) -> continue with next position
-            while (
-                self.path_index < len(self.path)
-                and self.path[self.path_index] == current_pos
-            ):
-                self.path_index += 1
-
-            if self.path_index < len(self.path):
-                # Get next (new) position on path
-                next_pos = self.path[self.path_index]
-                # Check if next_pos is blocked
-                if any(
-                    agent.cell_blocking
-                    for agent in self.local_memory.grid_info[next_pos].agents
-                ):
-                    # Blocked -> Wait till blocked_counter_max is reached, then resets path for recalculation in next step
-                    self.blocked_counter += 1
-
-                    if self.blocked_counter >= self.blocked_counter_max:
-                        self.path = None  # Reset path for recalculation in next step
-                        self.blocked_counter = 0
-                else:
-                    # Not blocked -> Move agent to next position on path
-                    next_cell = [
-                        cell
-                        for cell in self.model.grid.all_cells
-                        if cell.coordinate == next_pos
-                    ][0]
-                    self.local_memory.grid_info[current_pos].agents = [
-                        agent
-                        for agent in self.local_memory.grid_info[current_pos].agents
-                        if agent.unique_id != self.unique_id
-                    ]
-                    self.orientation = self.normalize_round45_angle(
-                        math.degrees(
-                            math.atan2(
-                                next_pos[1] - current_pos[1],
-                                next_pos[0] - current_pos[0],
-                            )
-                        )
-                    )
-                    self.cell = next_cell
-                    self.local_memory.grid_info[next_pos].agents.append(
-                        AgentInfo(
-                            unique_id=self.unique_id,
-                            agent_type=type(self).__name__,
-                            cell_blocking=self.cell_blocking,
-                            moving=self.moving,
-                        )
-                    )
-                    self.blocked_counter = 0
-                    self.path_index += 1
-                    moved = True
-
-        # Check if end of the path is reached
-        if self.path is not None and self.path_index == len(self.path):
-            self.path = None
-            self.goal = None
-
-        # If no movement was possible
-        if not moved:
-            unexplored_neighbors = [
-                pos
-                for pos in self.local_memory.get_all_neighbor_positions(current_pos)
-                if pos not in self.local_memory.grid_info
-            ]
-            if unexplored_neighbors:
-                # Look towards unexplored neighbors
-                target_pos = unexplored_neighbors[0]
-                self.orientation = self.normalize_round45_angle(
-                    (
-                        math.degrees(
-                            math.atan2(
-                                target_pos[1] - current_pos[1],
-                                target_pos[0] - current_pos[0],
-                            )
+        # Check for unexplored neighbors before moving
+        unexplored_neighbors = [
+            pos
+            for pos in self.local_memory.get_all_neighbor_positions(current_pos)
+            if pos not in self.local_memory.grid_info
+        ]
+        if unexplored_neighbors:
+            # Look towards unexplored neighbors
+            target_pos = unexplored_neighbors[0]
+            self.orientation = self.normalize_round45_angle(
+                (
+                    math.degrees(
+                        math.atan2(
+                            target_pos[1] - current_pos[1],
+                            target_pos[0] - current_pos[0],
                         )
                     )
                 )
+            )
         else:
-            # Increment step count if moved
-            self.step_count = +1
+            # Move along path
+            if self.path is not None:
+
+                # If path points on current_pos (usually at the beginning of the path) -> continue with next position
+                while (
+                    self.path_index < len(self.path)
+                    and self.path[self.path_index] == current_pos
+                ):
+                    self.path_index += 1
+
+                if self.path_index < len(self.path):
+                    # Get next (new) position on path
+                    next_pos = self.path[self.path_index]
+                    # Check if next_pos is blocked
+                    if any(
+                        agent.cell_blocking
+                        for agent in self.local_memory.grid_info[next_pos].agents
+                    ):
+                        # Blocked -> Wait till blocked_counter_max is reached, then resets path for recalculation in next step
+                        self.blocked_counter += 1
+
+                        if self.blocked_counter >= self.blocked_counter_max:
+                            self.path = None  # Reset path for recalculation in next step
+                            self.blocked_counter = 0
+                    else:
+                        # Not blocked -> Move agent to next position on path
+                        next_cell = [
+                            cell
+                            for cell in self.model.grid.all_cells
+                            if cell.coordinate == next_pos
+                        ][0]
+                        self.local_memory.grid_info[current_pos].agents = [
+                            agent
+                            for agent in self.local_memory.grid_info[current_pos].agents
+                            if agent.unique_id != self.unique_id
+                        ]
+                        self.orientation = self.normalize_round45_angle(
+                            math.degrees(
+                                math.atan2(
+                                    next_pos[1] - current_pos[1],
+                                    next_pos[0] - current_pos[0],
+                                )
+                            )
+                        )
+                        self.cell = next_cell
+                        self.local_memory.grid_info[next_pos].agents.append(
+                            AgentInfo(
+                                unique_id=self.unique_id,
+                                agent_type=type(self).__name__,
+                                cell_blocking=self.cell_blocking,
+                                moving=self.moving,
+                            )
+                        )
+                        self.blocked_counter = 0
+                        self.path_index += 1
+
+            # Check if end of the path is reached
+            if self.path is not None and self.path_index == len(self.path):
+                self.path = None
+                self.goal = None
 
     def _new_gird_info_callback(self, data: dict[tuple[int, int], CellInfo]):
         self.local_memory.grid_info = data.copy()
