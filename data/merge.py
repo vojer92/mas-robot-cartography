@@ -11,6 +11,9 @@ def main():
     # read csv's
     dataframes = [pd.read_csv(path, sep=";") for path in filepaths]
 
+    for i, df in enumerate(dataframes): 
+        print(f"Max Explored: {max(df["Explored"])} Filename: {filepaths[i]}")
+
     # concat csv's
     df = pd.concat(dataframes, ignore_index=True)
 
@@ -20,14 +23,14 @@ def main():
     # aggregate all seeds
     df = df.groupby(
         [
-            "factor_size",
-            "factor_distance",
-            "view_angle",
-            "view_radius",
-            "robot_type_str",
-            "grid_size",
-            "initial_no_robots",
             "Step",
+            "initial_no_robots",
+            "grid_size",
+            "robot_type_str",
+            "view_radius",
+            "view_angle",
+            "factor_distance",
+            "factor_size",
         ]
     ).agg(
         {
@@ -41,9 +44,9 @@ def main():
     df.columns = ["_".join(col).strip() for col in df.columns.values]
     df = df.reset_index()
 
-    print(df.head())
+    print(f"Explored max after aggregation: {max(df["Explored_max"])}")
     print(f"shape: {df.shape}")
-    df.to_csv("Results-aggregated.csv", sep=";", index=False)
+    # df.to_csv("Results-aggregated.csv", sep=";", index=False)
 
 
 if __name__ == "__main__":
