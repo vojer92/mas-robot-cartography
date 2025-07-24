@@ -52,6 +52,6 @@ if __name__ == "__main__":
         )
 
         df_results = pd.DataFrame.from_dict(results)
-        df_results.to_csv(f"data/Results-{now.strftime("%d.%m.%Y-%H:%M:%S")}-seed{i}.csv", sep=";", index=False)
+        df_results.to_csv(f"data/Results-{now.strftime("%d.%m.%Y-%H_%M_%S")}-seed{i}.csv", sep=";", index=False)
 
         print(f"Run with seed {i} successfull!")
