@@ -13,7 +13,7 @@ def main():
     for df in dataframes:
         df["Explored"] = df["Explored_fields"] / df["grid_size"] ** 2 * 100.0
         print(max(df["Explored"]))
-        # df.to_csv(f"Results-fixed-seed{df["seed"][0]}.csv", sep=";", index=False)
+        df.to_csv(f"Results-fixed-seed{df["seed"][0]}.csv", sep=";", index=False)
 
 
 if __name__ == "__main__":
