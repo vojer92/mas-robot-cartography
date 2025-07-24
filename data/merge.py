@@ -23,14 +23,14 @@ def main():
     # aggregate all seeds
     df = df.groupby(
         [
-            "Step",
-            "initial_no_robots",
-            "grid_size",
-            "robot_type_str",
-            "view_radius",
-            "view_angle",
-            "factor_distance",
             "factor_size",
+            "factor_distance",
+            "view_angle",
+            "view_radius",
+            "robot_type_str",
+            "grid_size",
+            "initial_no_robots",
+            "Step",
         ]
     ).agg(
         {
@@ -46,7 +46,7 @@ def main():
 
     print(f"Explored max after aggregation: {max(df["Explored_max"])}")
     print(f"shape: {df.shape}")
-    # df.to_csv("Results-aggregated.csv", sep=";", index=False)
+    df.to_csv("Results-aggregated.csv", sep=";", index=False)
 
 
 if __name__ == "__main__":
