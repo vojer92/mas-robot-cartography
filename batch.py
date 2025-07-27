@@ -21,7 +21,7 @@ if __name__ == "__main__":
         
         params = {
             "initial_no_robots": [1, 3, 6, 9],
-            "grid_size": range(40, 101, 20),
+            "grid_size": 40, #range(40, 101, 20),
             "robot_type_str": ["RandomWalkRobot", "FBERobot"],
             "view_radius": range(1, 4, 1),
             "view_angle": [45, 90, 180, 360],
@@ -29,17 +29,6 @@ if __name__ == "__main__":
             "factor_distance": 1.0,
             "factor_size": [0.0, 0.1, 0.25],
         }
-
-        # params = {
-        #     "initial_no_robots": 5,
-        #     "grid_size": 100,
-        #     "robot_type_str": ["RandomWalkRobot", "FBERobot"],
-        #     "view_radius": 1,
-        #     "view_angle": 90,
-        #     "seed": range(1, 2, 1),
-        #     "factor_distance": 0.5,
-        #     "factor_size": 0.5,
-        # }
 
         results = batch_run(
             Exploration,
