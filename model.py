@@ -17,14 +17,73 @@ from algorithms.explorability_analysis import (flood_fill,
                                                save_no_unexplorable)
 from communication.pubSubBroker import PubSubBroker
 
-#OBSTACLES = [
-#    [(-2, 0), (-1, 0), (0, 0)],
-#    [(-3, 0), (-2, 0), (-1, 0), (0, 0)],
-#    [(-4, 0), (-3, 0), (-2, 0), (-1, 0), (0, 0)],
-#    [(0, -2), (0, -1), (0, 0)],
-#    [(0, -3), (0, -2), (0, -1), (0, 0)],
-#    [(0, -4), (0, -3), (0, -2), (0, -1), (0, 0)],
-#]
+#NOTE: If you want to use given shapes or place all obstacles adjust here and change
+# method below.
+OBSTACLE_SHAPES = [
+    [(-2, 0), (-1, 0), (0, 0)],
+
+    [(-4, 0), (-3, 0), (-2, 0), (-1, 0), (0, 0)],
+    [(0, -2), (0, -1), (0, 0)],
+    [(0, -3), (0, -2), (0, -1), (0, 0)],
+    [(0, -4), (0, -3), (0, -2), (0, -1), (0, 0)],
+]
+
+# Up to 40x40-grid
+OBSTACLES = []
+
+OBSTACLES.extend([(x, 0) for x in range(0, 33)])
+OBSTACLES.extend([(x, 0) for x in range(36, 40)])
+
+OBSTACLES.extend([(x, 10) for x in range(0, 6)])
+OBSTACLES.extend([(x, 10) for x in range(8, 15)])
+OBSTACLES.extend([(x, 10) for x in range(17, 31)])
+OBSTACLES.extend([(x, 10) for x in range(37, 40)])
+
+OBSTACLES.extend([(x, 17) for x in range(0, 6)])
+OBSTACLES.extend([(x, 17) for x in range(8, 10)])
+
+OBSTACLES.extend([(x, 23) for x in range(2, 16)])
+OBSTACLES.extend([(x, 23) for x in range(18, 31)])
+OBSTACLES.extend([(x, 23) for x in range(37, 40)])
+
+OBSTACLES.extend([(x, 29) for x in range(2, 11)])
+OBSTACLES.extend([(x, 29) for x in range(13, 21)])
+OBSTACLES.extend([(x, 29) for x in range(23, 40)])
+
+OBSTACLES.extend([(x, 38) for x in range(2, 11)])
+OBSTACLES.extend([(x, 38) for x in range(13, 16)])
+
+OBSTACLES.extend([(2, y) for y in range(17, 25)])
+OBSTACLES.extend([(2, y) for y in range(27, 40)])
+
+OBSTACLES.extend([(4, y) for y in [11,14,15,16]])
+
+OBSTACLES.extend([(9, y) for y in range(11, 12)])
+OBSTACLES.extend([(9, y) for y in range(14, 24)])
+OBSTACLES.extend([(9, y) for y in range(29, 33)])
+OBSTACLES.extend([(9, y) for y in range(35, 39)])
+
+OBSTACLES.extend([(13, y) for y in range(0, 10)])
+
+OBSTACLES.extend([(15, y) for y in range(29, 40)])
+
+OBSTACLES.extend([(19, y) for y in range(29, 33)])
+OBSTACLES.extend([(19, y) for y in range(35, 40)])
+
+OBSTACLES.extend([(31, y) for y in range(0, 24)])
+
+OBSTACLES.extend([(37, y) for y in range(0, 7)])
+OBSTACLES.extend([(37, y) for y in range(9, 12)])
+OBSTACLES.extend([(37, y) for y in range(14, 24)])
+
+
+
+
+
+# Remove duplicates and sort
+OBSTACLES = list(set(OBSTACLES))
+OBSTACLES.sort(key=lambda c: (c[0], c[1]))
+
 
 
 class Exploration(Model):
@@ -64,7 +123,10 @@ class Exploration(Model):
         self.pubSubBroker = PubSubBroker()
 
         # Place obstacles
-        self._place_obstacles()
+        #NOTE: Select the placement method you want.
+        #self._place_obstacles_random_shattered()
+        #self._place_obstacles_random_given_shapes()
+        self._place_obstacles_given()
 
         # Place (unexplored) Ground-agents in all cells
         for cell in self.grid.all_cells:
@@ -175,7 +237,6 @@ class Exploration(Model):
                 for agent in self.grid.all_cells.agents
                 if isinstance(agent, ExplorerRobot)
             ])
-            # TODO: Add all metrics, e.g. exploration_progress
         }
 
         agenttype_reporter = {
@@ -196,7 +257,7 @@ class Exploration(Model):
         if self.steps == 999:
             self.simulator.reset()
 
-    def _place_obstacles(self):
+    def _place_obstacles_random_shattered(self):
         free_cells = [
             cell
             for cell in self.grid.all_cells
@@ -209,18 +270,27 @@ class Exploration(Model):
         num = int((self.width * self.height) * self.obstacle_density)
 
         Obstacle.create_agents(self, num, cell=self.random.sample(free_cells, k=num))
-        # for obstacle in OBSTACLES:
-        #     random_cell = self.grid.select_random_empty_cell()
-        #     neighborhood = random_cell.get_neighborhood(
-        #         len(obstacle), include_center=True
-        #     )
-        #     for coordinate in obstacle:
-        #         target_cells = neighborhood.select(
-        #             lambda cell: cell.coordinate
-        #             == tuple(
-        #                 abs(a + b) for a, b in zip(random_cell.coordinate, coordinate)
-        #             )
-        #         )
-        #         # Transfer list (usually 1, but also 0 or >1 possible) to coordinate of 1 cell
-        #         if target_cells.cells:
-        #             Obstacle(self, cell=target_cells.cells[0])
+
+    def _place_obstacles_random_given_shapes(self):
+        for obstacle in OBSTACLE_SHAPES:
+             random_cell = self.grid.select_random_empty_cell()
+             neighborhood = random_cell.get_neighborhood(
+                 len(obstacle), include_center=True
+             )
+             for coordinate in obstacle:
+                 target_cells = neighborhood.select(
+                     lambda cell: cell.coordinate
+                     == tuple(
+                         abs(a + b) for a, b in zip(random_cell.coordinate, coordinate)
+                     )
+                 )
+                 # Transfer list (usually 1, but also 0 or >1 possible) to coordinate of 1 cell
+                 if target_cells.cells:
+                     Obstacle(self, cell=target_cells.cells[0])
+
+    def _place_obstacles_given(self):
+        for coordinate in OBSTACLES:
+            if coordinate[0]< self.width and coordinate[1]< self.height:
+                Obstacle.create_agents(self, 1, cell=self.grid[coordinate])
+            else:
+                continue
