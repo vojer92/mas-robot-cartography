@@ -76,10 +76,6 @@ OBSTACLES.extend([(37, y) for y in range(0, 7)])
 OBSTACLES.extend([(37, y) for y in range(9, 12)])
 OBSTACLES.extend([(37, y) for y in range(14, 24)])
 
-
-
-
-
 # Remove duplicates and sort
 OBSTACLES = list(set(OBSTACLES))
 OBSTACLES.sort(key=lambda c: (c[0], c[1]))
