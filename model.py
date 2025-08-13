@@ -120,9 +120,9 @@ class Exploration(Model):
 
         # Place obstacles
         #NOTE: Select the placement method you want.
-        #self._place_obstacles_random_shattered()
+        self._place_obstacles_random_shattered()
         #self._place_obstacles_random_given_shapes()
-        self._place_obstacles_given()
+        #self._place_obstacles_given()
 
         # Place (unexplored) Ground-agents in all cells
         for cell in self.grid.all_cells:
