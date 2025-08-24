@@ -23,17 +23,23 @@ source .venv/bin/activate  # Linux/macOS
 pip install -r requirements.txt
 ```
 
-### Server starten
+### Visualisierung starten
 
 ```bash
-python server/server.py # TODO: Wird sich je nach Struktur noch ändern!
+solara run app.py
+```
+
+### Batchrunner starten
+
+```bash
+python batch.py <start_seed> <end_seed>
 ```
 
 ---
 
 ## 💡 Git & GitHub Basics
 
-### 📥 Projekt klonen (wenn ihr beitretet)
+### 📥 Projekt klonen
 
 ```bash
 git clone https://github.com/vojer92/mas-robot-cartography.git
@@ -115,29 +121,25 @@ def add(a: float, b: float) -> float:
 
 ---
 
-## 🧪 Tests (TODO: je nachdem, ob wir testing betreiben wollen)
-
-Einfaches Testen mit `pytest`:
-
-```bash
-pytest
-```
-
----
-
 ## 📁 Projektstruktur
 
 ```
 mas-robot-cartography/
-├── agents/                # Agentenklassen
-├── agent_factory.py       # Agent Factory
-├── exploration/           # Erkundungsstrategien
-├── docs/                  # Dokumentation
-├── examples/              # Beispiele Mesa
-├── requirements.txt       # Abhängigkeiten
-├── main.txt               # Hauptseinstiegspunkt
-├── .gitignore             # Git-Ignore
-└── README.md              # Diese Datei
+├── agents/                     # Agentenklassen
+├── algorithms/                 # Algorithmen
+├──── movement_goal_finding/    # Methoden zur Findung von Bewegungszielen + Interface + Factory + Enum
+├──── movement_goal_selection/  # Methoden zur Auswahl von Bewegungszielen + Interface + Factory + Enum
+├──── pathfinding/              # Methoden zur Pfadfindung + Interface + Factory + Enum
+├── communication/              # Methoden zur Kommunikation
+├── data/                       # Simulationsdaten
+├── docs/                       # Dokumentation
+├── masks/                      # Zwischenspeicher erkundbare Felder
+├── .gitignore                  # Git-Ignore
+├── requirements.txt            # Abhängigkeiten
+├── model.py                    # Modell
+├── app.py                      # Simulationsvisualisierung
+├── batch.py                    # Batchrunner
+└── README.md                   # Diese Datei
 ```
 
 ---
